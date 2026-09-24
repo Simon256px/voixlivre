@@ -43,30 +43,128 @@ PREFETCH = 8         # segments préparés à l'avance
 # ---------------------------------------------------------------- lecture du livre
 
 def _clean(text):
-    text = re.sub(r"[ \t\xa0​]+", " ", text)
+    text = re.sub(r"[ \t\xa0\u2009\u202f\u200b\ufeff]+", " ", text.replace("\xad", ""))
     return re.sub(r"\s*\n\s*", "\n", text).strip()
+
+
+_CLOSING_START = re.compile(r"^[,.;:!?)\]»…’%]")                # suite d'une phrase coupée
+_LOWER_START = re.compile(r"^[a-zà-ÿœæ]")
+_SENTENCE_END = re.compile(r"[.!?…]\W*$")
+_OPEN_END = re.compile(r"[’'(\[«,-]$|\b(?:de|du|des|la|le|les|l|d|un|une|et|à|au|aux|en|par|pour|sur|dans|"
+                       r"que|qu’ici|qui|dont|où|comme)$", re.I)                     # phrase inachevée
+_JUNK_LINE = re.compile(r"^(?:\d{1,4}\W*|[\W_]+)$")             # n° de page, « * * * », ponctuation seule
+
+
+def tidy_text(text):
+    """Remet le texte en paragraphes propres et complets pour une lecture fluide.
+
+    Recolle les lignes coupées au milieu d'une phrase, supprime les numéros de page
+    et séparateurs isolés, normalise espaces et ponctuation.
+    """
+    paragraphs = []
+    for line in _clean(text).split("\n"):
+        line = re.sub(r"^[•·▪◦■□►➢✓*]\s*", "", line.strip())      # puces de liste
+        if not line or _JUNK_LINE.match(line):
+            continue
+        if paragraphs and (_CLOSING_START.match(line) or _OPEN_END.search(paragraphs[-1])
+                           or (_LOWER_START.match(line) and not _SENTENCE_END.search(paragraphs[-1]))):
+            sep = "" if re.match(r"^[,.;:!?)\]»…%]", line) or paragraphs[-1].endswith(("’", "'", "(", "[")) else " "
+            paragraphs[-1] += sep + line
+        else:
+            paragraphs.append(line)
+    out = []
+    for p in paragraphs:
+        p = re.sub(r"\s*(?:\[\s*(?:…|\.\.\.)\s*\]|\(\s*(?:…|\.\.\.)\s*\))\s*", " ", p)  # coupures […]
+        p = re.sub(r"\s+([,.)\]])", r"\1", p)
+        p = re.sub(r"([(\[])\s+", r"\1", p)
+        p = re.sub(r"«\s*", "« ", p)
+        p = re.sub(r"\s*»", " »", p)
+        p = re.sub(r"\s{2,}", " ", p).strip()
+        if p:
+            out.append(p)
+    return "\n".join(out)
+
+
+_BLOCK_TAGS = ["p", "div", "section", "article", "header", "footer", "blockquote", "li", "ul", "ol",
+               "dd", "dt", "dl", "pre", "tr", "table", "h1", "h2", "h3", "h4", "h5", "h6", "hr"]
+_NOTE_CLASS = re.compile(r"^(?:defnotes?|notes?|footnotes?|endnotes?|rearnotes?|ntb|nt|apnb|noteref|"
+                         r"note[-_]?\w*|\w*[-_]notes?)$", re.I)
+_NOTE_TYPE = re.compile(r"note|annotation", re.I)
+_NOTE_MARK = re.compile(r"^\W*\d{1,3}\W*$|^\W*[*†‡§]+\W*$|^\W*[ivxlc]{1,6}\W*$", re.I)
+_BOILERPLATE = re.compile(r"ISBN|©|copyright|tous droits|achevé de numériser|édition électronique|"
+                          r"tenu informé des parutions", re.I)
+
+
+def _epub_toc_titles(book):
+    """Associe chaque fichier du livre au titre que lui donne la table des matières."""
+    titles = {}
+
+    def walk(entries):
+        for entry in entries:
+            if isinstance(entry, tuple):
+                section, children = entry
+                if getattr(section, "href", None):
+                    titles.setdefault(section.href.split("#")[0], section.title)
+                walk(children)
+            elif getattr(entry, "href", None):
+                titles.setdefault(entry.href.split("#")[0], entry.title)
+
+    walk(book.toc or [])
+    return titles
+
+
+def _epub_html_to_text(html):
+    from bs4 import BeautifulSoup, NavigableString, Comment
+
+    soup = BeautifulSoup(html, "html.parser")
+    root = soup.body or soup
+    # en HTML, les retours à la ligne du code source ne sont que des espaces
+    for node in list(root.find_all(string=True)):
+        if isinstance(node, Comment):
+            node.extract()
+        elif isinstance(node, NavigableString) and not node.find_parent("pre"):
+            node.replace_with(re.sub(r"\s+", " ", str(node)))
+    for tag in root(["script", "style", "aside", "img", "svg", "figure", "nav", "rt", "rp"]):
+        tag.decompose()
+    # notes de bas de page et appels de note : on ne les lit pas
+    for tag in list(root.find_all(True)):
+        if tag.decomposed:
+            continue
+        kind = " ".join(str(tag.get(a, "")) for a in ("epub:type", "role"))
+        classes = tag.get("class") or []
+        if _NOTE_TYPE.search(kind) or any(_NOTE_CLASS.match(c) for c in classes):
+            tag.decompose()
+        elif tag.name in ("sup", "a") and _NOTE_MARK.match(tag.get_text()):
+            tag.decompose()
+    # une pause d'intonation après chaque titre
+    for head in root.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
+        if not re.search(r"[.!?…:]\W*$", head.get_text().strip()):
+            head.append(".")
+    for br in root.find_all("br"):
+        br.replace_with("\n")
+    # les balises de bloc séparent les paragraphes, les balises en ligne (<i>, <span>…) non
+    for tag in root.find_all(_BLOCK_TAGS):
+        tag.insert_before("\n")
+        tag.append("\n")
+    return tidy_text(root.get_text(""))
 
 
 def load_epub(path):
     from ebooklib import epub, ITEM_DOCUMENT
-    from bs4 import BeautifulSoup
 
-    book = epub.read_epub(str(path), options={"ignore_ncx": True})
+    book = epub.read_epub(str(path), options={"ignore_ncx": False})
+    toc = _epub_toc_titles(book)
     chapters = []
     for idref, _ in book.spine:
         item = book.get_item_with_id(idref)
         if item is None or item.get_type() != ITEM_DOCUMENT:
             continue
-        soup = BeautifulSoup(item.get_content(), "html.parser")
-        for tag in soup(["script", "style"]):
-            tag.decompose()
-        for br in soup.find_all("br"):
-            br.replace_with("\n")
-        text = _clean(soup.get_text("\n"))
-        if len(text) < 40:
+        text = _epub_html_to_text(item.get_content())
+        if len(text) < 40 or (len(text) < 600 and _BOILERPLATE.search(text)):
             continue
-        head = soup.find(["h1", "h2", "h3"])
-        title = head.get_text(" ", strip=True) if head else text.split("\n", 1)[0]
+        name = item.get_name()
+        title = toc.get(name) or next((t for h, t in toc.items() if name.endswith(h) or h.endswith(name)), None)
+        title = _clean(title or text.split("\n", 1)[0]).rstrip(".")
         chapters.append((title[:70] or f"Section {len(chapters) + 1}", text))
     return chapters
 
@@ -79,10 +177,14 @@ def load_txt(path):
             break
         except UnicodeDecodeError:
             continue
+    text = text.replace("\r\n", "\n")
+    # les lignes vides séparent les paragraphes ; les retours à la ligne simples sont recollés
+    if re.search(r"\n\s*\n", text):
+        text = re.sub(r"(?<!\n)\n(?!\s*\n)", " ", text)
     parts = re.split(r"\n(?=\s*(?:chapitre|chapter|partie|livre)\b[^\n]{0,60}\n)", text, flags=re.I)
     chapters = []
     for p in parts:
-        p = _clean(p)
+        p = tidy_text(p)
         if p:
             chapters.append((p.split("\n", 1)[0][:70], p))
     return chapters
@@ -95,11 +197,11 @@ def load_pdf(path, pages_per_section=10):
     pages = [(pg.extract_text() or "") for pg in reader.pages]
     chapters = []
     for start in range(0, len(pages), pages_per_section):
-        # recolle les lignes coupées à l'intérieur des paragraphes
+        # recolle les mots coupés et les lignes coupées à l'intérieur des paragraphes
         text = "\n".join(pages[start:start + pages_per_section])
-        text = re.sub(r"-\n(\w)", r"\1", text)
-        text = re.sub(r"(?<![.!?:»])\n(?!\n)", " ", text)
-        text = _clean(text)
+        text = re.sub(r"(\w)-\n(\w)", r"\1\2", text)
+        text = re.sub(r"(?<![.!?:»…])\n(?!\n)", " ", text)
+        text = tidy_text(text)
         if text:
             end = min(start + pages_per_section, len(pages))
             chapters.append((f"Pages {start + 1}-{end}", text))
@@ -117,6 +219,33 @@ def load_book(path):
     return chapters
 
 
+_ABBREV_END = re.compile(r"(?:^|[\s(’'])(?:[A-ZÀ-Ý]|\d{1,4}|[IVXLC]{1,5}|M|MM|Mme|Mlle|Mgr|Dr|Pr|St|Ste|"
+                         r"p|pp|cf|Cf|éd|vol|chap|coll|trad|n°|av|apr|env|op|cit|ibid|id|fig|art|al)\.$")
+
+_CONTINUATION = re.compile(r"^(?:[,;:)\]»]|[–—]\s*[,;:)]|[a-zà-ÿœæ])")   # « ? –, parle… » n'est pas une phrase
+
+# Où couper une phrase trop longue, du meilleur au moins bon endroit :
+# (motif, position de coupe dans le motif) — la ponctuation reste à la fin du premier morceau,
+# un tiret d'incise ou « et / mais / car… » passent au début du suivant.
+_CUTS = [
+    (re.compile(r"[;:](?=\s)"), 1),
+    (re.compile(r"\s[–—]\s"), 0),
+    (re.compile(r",(?=\s)"), 1),
+    (re.compile(r"\s(?:et|mais|car|donc|or|puis|ou|parce que|lorsque|tandis que|alors que)\s"), 0),
+    (re.compile(r"\s"), 0),
+]
+
+
+def _best_cut(sentence):
+    """Position où couper une phrase trop longue pour garder une intonation naturelle."""
+    lo, hi = MAX_CHARS // 2, MAX_CHARS
+    for pattern, offset in _CUTS:
+        spots = [m.start() + offset for m in pattern.finditer(sentence, 0, hi) if m.start() >= lo]
+        if spots:
+            return spots[-1]
+    return hi
+
+
 def split_chunks(text):
     """Découpe un chapitre en segments [(texte, fin_de_paragraphe)]."""
     chunks = []
@@ -124,21 +253,26 @@ def split_chunks(text):
         para = para.strip()
         if not para:
             continue
+        # découpe en phrases, puis recolle les fausses fins de phrase (« M. », « p. 12 », « 1. »…)
+        sentences = []
+        for s in re.split(r"(?<=[.!?…])\s+", para):
+            if sentences and (_ABBREV_END.search(sentences[-1]) or len(sentences[-1]) < 12
+                              or _CONTINUATION.match(s)):
+                sentences[-1] += " " + s
+            else:
+                sentences.append(s)
         pieces = []
-        for sentence in re.split(r"(?<=[.!?…])\s+", para):
-            while len(sentence) > MAX_CHARS:
-                cut = max(sentence.rfind(sep, 0, MAX_CHARS) for sep in (", ", "; ", " : ", " — "))
-                if cut < MAX_CHARS // 3:
-                    cut = sentence.rfind(" ", 0, MAX_CHARS)
-                if cut <= 0:
-                    cut = MAX_CHARS
-                pieces.append(sentence[:cut + 1].strip())
-                sentence = sentence[cut + 1:].strip()
+        for sentence in sentences:
+            while len(sentence) > MAX_CHARS + 60:          # marge : pas de petit bout isolé en fin
+                cut = _best_cut(sentence)
+                pieces.append(sentence[:cut].strip())
+                sentence = sentence[cut:].strip()
             if sentence:
                 pieces.append(sentence)
         current = ""
         for piece in pieces:
-            if current and len(current) + len(piece) + 1 > MAX_CHARS:
+            # un bout trop court lu seul aurait une intonation fausse : on le garde avec la suite
+            if current and len(current) >= 25 and len(current) + len(piece) + 1 > MAX_CHARS:
                 chunks.append((current, False))
                 current = piece
             else:
