@@ -4,6 +4,23 @@ Chaque voix de ce dossier est un court extrait audio (10 à 20 s) accompagné du
 décrits dans `voix.json`. VoixLivre les imite grâce au modèle
 [Qwen3-TTS-12Hz-1.7B-Base](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-Base).
 
+## Voix fournies
+
+Femmes d'environ 30 ans, françaises natives, créées avec
+[Qwen3-TTS-12Hz-1.7B-VoiceDesign](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign)
+à partir d'une description écrite (reprise dans le champ `source` de `voix.json`). Pour chaque
+voix, le meilleur de 5 essais a été retenu (intelligibilité vérifiée par Whisper, débit, hauteur).
+
+| Voix | Timbre | Hauteur moyenne |
+|---|---|---|
+| Léa — veloutée, confiante et posée / envoûtante | un peu grave, riche | ≈ 180 Hz |
+| Clara — sereine, confiante et posée / envoûtante | médium, chaleureux | ≈ 210 Hz |
+| Margot — claire, confiante et posée / envoûtante | médium-aigu, net | ≈ 240 Hz |
+
+Les variantes « envoûtante » ont une lecture plus intime, légèrement soufflée et plus lente.
+
+## Format
+
 Format d'une entrée de `voix.json` :
 
 ```json
