@@ -5,3 +5,4 @@ sounddevice
 ebooklib
 beautifulsoup4
 pypdf
+librosa

@@ -16,6 +16,9 @@ import numpy as np
 import sounddevice as sd
 
 MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+CLONE_MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"         # pour les voix clonées du dossier voix/
+VOICES_DIR = Path(__file__).resolve().parent / "voix"
+MAX_REF_SECONDS = 20                                       # extrait de référence d'une voix clonée
 SPEAKERS = ["Serena", "Vivian", "Ryan", "Aiden", "Eric", "Dylan", "Uncle_Fu", "Ono_Anna", "Sohee"]
 # Styles proposés dans la liste « Style » (le champ reste modifiable à la main).
 # Aucune voix du modèle n'est francophone native : préciser « sans accent » aide beaucoup.
@@ -293,6 +296,37 @@ def _trim(wav, sr, threshold=0.01):
     return wav[max(loud[0] - pad, 0):loud[-1] + pad]
 
 
+def load_cloned_voices():
+    """Voix clonées décrites dans voix/voix.json : {nom: {"fichier", "texte", "source"}}."""
+    try:
+        entries = json.loads((VOICES_DIR / "voix.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {e["nom"]: e for e in entries if (VOICES_DIR / e["fichier"]).exists()}
+
+
+def add_cloned_voice(name, audio_path, text):
+    """Copie un extrait audio dans voix/ (mono, 20 s max) et l'ajoute à voix.json."""
+    import librosa
+    import soundfile as sf
+
+    wav, sr = librosa.load(str(audio_path), sr=None, mono=True, duration=MAX_REF_SECONDS)
+    VOICES_DIR.mkdir(exist_ok=True)
+    stem = re.sub(r"[^\w-]+", "_", name.lower()).strip("_") or "voix"
+    target = VOICES_DIR / f"{stem}.flac"
+    n = 2
+    while target.exists():
+        target, n = VOICES_DIR / f"{stem}_{n}.flac", n + 1
+    sf.write(str(target), wav, sr)
+    try:
+        entries = json.loads((VOICES_DIR / "voix.json").read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        entries = []
+    entries.append({"nom": name, "fichier": target.name, "texte": text.strip(),
+                    "source": f"Ajoutée depuis {Path(audio_path).name}"})
+    (VOICES_DIR / "voix.json").write_text(json.dumps(entries, ensure_ascii=False, indent=1), encoding="utf-8")
+
+
 class _Aborted(Exception):
     """Levée dans le modèle pour interrompre une génération devenue inutile."""
 
@@ -307,6 +341,9 @@ class Narrator:
     def __init__(self, post):
         self.post = post                      # callback vers l'interface
         self.model = None
+        self.clone_model = None               # chargé à la première voix clonée utilisée
+        self.clones = load_cloned_voices()
+        self.clone_prompts = {}               # nom -> empreinte de la voix, calculée une fois
         self.cond = threading.Condition()
         self.chunks = []                      # chunks[chapitre] -> [(texte, fin_de_paragraphe)]
         self.offsets = []                     # index global du 1er segment de chaque chapitre
@@ -346,14 +383,73 @@ class Narrator:
         if self.running_epoch is not None and self.running_epoch != self.gen_epoch:
             raise _Aborted()
 
+    def _clone_prompt(self, name):
+        """Charge (une seule fois) le modèle de clonage et l'empreinte de la voix `name`."""
+        if self.clone_model is None:
+            import torch
+            from qwen_tts import Qwen3TTSModel
+
+            self.post("status", "Chargement du modèle des voix clonées (une seule fois)…")
+            cuda = torch.cuda.is_available()
+            model = Qwen3TTSModel.from_pretrained(
+                CLONE_MODEL_ID,
+                device_map="cuda:0" if cuda else "cpu",
+                dtype=torch.bfloat16 if cuda else torch.float32,
+                attn_implementation="sdpa",
+            )
+            model.model.talker.register_forward_pre_hook(self._abort_hook)
+            self.clone_model = model
+        if name not in self.clone_prompts:
+            import librosa
+
+            entry = self.clones[name]
+            wav, sr = librosa.load(str(VOICES_DIR / entry["fichier"]), sr=None, mono=True,
+                                   duration=MAX_REF_SECONDS)
+            text = entry.get("texte", "").strip()
+            # sans le texte de l'extrait, on ne garde que le timbre (un peu moins fidèle)
+            self.clone_prompts[name] = self.clone_model.create_voice_clone_prompt(
+                ref_audio=(wav, sr), ref_text=text or None, x_vector_only_mode=not text)[0]
+        return self.clone_prompts[name]
+
     def synthesize(self, texts, voice):
         """Génère plusieurs segments d'un coup (bien plus rapide qu'un par un)."""
         n = len(texts)
-        kwargs = {"text": texts, "language": [voice["language"]] * n, "speaker": [voice["speaker"]] * n}
-        if voice["instruct"].strip():
-            kwargs["instruct"] = [voice["instruct"].strip()] * n
-        wavs, sr = self.model.generate_custom_voice(**kwargs)
+        if voice["speaker"] in self.clones:
+            prompt = self._clone_prompt(voice["speaker"])
+            wavs, sr = self.clone_model.generate_voice_clone(
+                text=texts, language=[voice["language"]] * n, voice_clone_prompt=[prompt] * n)
+        else:
+            kwargs = {"text": texts, "language": [voice["language"]] * n, "speaker": [voice["speaker"]] * n}
+            if voice["instruct"].strip():
+                kwargs["instruct"] = [voice["instruct"].strip()] * n
+            wavs, sr = self.model.generate_custom_voice(**kwargs)
         return [_trim(np.asarray(w, dtype=np.float32).reshape(-1), sr) for w in wavs], sr
+
+    def _synthesize_checked(self, texts, voice):
+        """Comme synthesize, mais régénère une fois les ratés (babillage ou audio quasi vide).
+
+        Le modèle échantillonne au hasard : très rarement, il produit un audio bien trop long
+        pour le texte (il divague) ou presque vide. On le détecte à la durée.
+        """
+        wavs, sr = self.synthesize(texts, voice)
+
+        def suspicious(text, wav):
+            seconds = len(wav) / sr
+            return seconds > len(text) / 7 + 2 or seconds < len(text) / 40
+
+        bad = [k for k, (t, w) in enumerate(zip(texts, wavs)) if suspicious(t, w)]
+        if bad:
+            retry, _ = self.synthesize([texts[k] for k in bad], voice)
+            for k, wav in zip(bad, retry):
+                expected = len(texts[k]) / 15 * sr              # ≈ 15 caractères par seconde
+                if abs(len(wav) - expected) < abs(len(wavs[k]) - expected):
+                    wavs[k] = wav
+        return wavs, sr
+
+    def reload_clones(self):
+        with self.cond:
+            self.clones = load_cloned_voices()
+            self.clone_prompts.clear()
 
     # -- commandes
     def load(self, chunks):
@@ -442,7 +538,7 @@ class Narrator:
                 voice = dict(self.voice)
                 texts = [self.chunks[c][i][0] for c, i in todo]
             try:
-                wavs, sr = self.synthesize(texts, voice)
+                wavs, sr = self._synthesize_checked(texts, voice)
             except _Aborted:
                 continue
             except Exception as exc:  # noqa: BLE001
@@ -538,6 +634,7 @@ class App:
         top = ttk.Frame(self.root, padding=(10, 8))
         top.pack(fill="x")
         ttk.Button(top, text="Ouvrir un livre…", command=self.choose_file).pack(side="left")
+        ttk.Button(top, text="Ajouter une voix…", command=self.add_voice).pack(side="right")
         self.title_var = tk.StringVar(value="Aucun livre ouvert")
         ttk.Label(top, textvariable=self.title_var, font=("Segoe UI", 11, "bold")).pack(side="left", padx=12)
 
@@ -573,9 +670,12 @@ class App:
             b.state(["disabled"])
 
         ttk.Label(controls, text="Voix").pack(side="left", padx=(20, 4))
-        self.speaker_var = tk.StringVar(value=self.progress.get("_voice", {}).get("speaker", SPEAKERS[0]))
-        ttk.Combobox(controls, textvariable=self.speaker_var, values=SPEAKERS, width=10,
-                     state="readonly").pack(side="left")
+        voices = self._voice_names()
+        saved = self.progress.get("_voice", {}).get("speaker")
+        self.speaker_var = tk.StringVar(value=saved if saved in voices else voices[0])
+        self.speaker_box = ttk.Combobox(controls, textvariable=self.speaker_var, values=voices, width=26,
+                                        state="readonly", height=25)
+        self.speaker_box.pack(side="left")
         ttk.Label(controls, text="Langue").pack(side="left", padx=(12, 4))
         self.lang_var = tk.StringVar(value=self.progress.get("_voice", {}).get("language", LANGUAGES[0]))
         ttk.Combobox(controls, textvariable=self.lang_var, values=LANGUAGES, width=10,
@@ -583,8 +683,8 @@ class App:
         ttk.Label(controls, text="Style").pack(side="left", padx=(12, 4))
         self.instruct_var = tk.StringVar(value=self.progress.get("_voice", {}).get(
             "instruct", STYLES[0]))
-        ttk.Combobox(controls, textvariable=self.instruct_var, values=STYLES).pack(
-            side="left", fill="x", expand=True)
+        self.style_box = ttk.Combobox(controls, textvariable=self.instruct_var, values=STYLES)
+        self.style_box.pack(side="left", fill="x", expand=True)
         for var in (self.speaker_var, self.lang_var, self.instruct_var):
             var.trace_add("write", lambda *_: self._voice_changed())
         self._apply_voice()
@@ -725,10 +825,42 @@ class App:
             self.current = (ch, idx)
             self._highlight(ch, idx)
 
+    def _voice_names(self):
+        # les voix clonées (lectrices françaises natives) d'abord, puis les voix intégrées au modèle
+        return list(self.narrator.clones) + SPEAKERS
+
     def _apply_voice(self):
         self._voice_job = None
+        cloned = self.speaker_var.get() in self.narrator.clones
+        # le modèle de clonage reproduit le ton de l'extrait et ne suit pas de consigne de style
+        self.style_box.state(["disabled"] if cloned else ["!disabled"])
         self.narrator.set_voice({"speaker": self.speaker_var.get(), "language": self.lang_var.get(),
-                                 "instruct": self.instruct_var.get()})
+                                 "instruct": "" if cloned else self.instruct_var.get()})
+
+    def add_voice(self):
+        from tkinter import simpledialog
+
+        path = filedialog.askopenfilename(
+            title="Extrait audio de la voix (10 à 20 secondes, une seule personne, sans musique)",
+            filetypes=[("Audio", "*.wav *.mp3 *.flac *.ogg *.m4a"), ("Tous les fichiers", "*.*")])
+        if not path:
+            return
+        name = simpledialog.askstring("Ajouter une voix", "Nom de la voix :", parent=self.root)
+        if not name or not name.strip():
+            return
+        text = simpledialog.askstring(
+            "Ajouter une voix",
+            "Texte exact prononcé dans l'extrait (recommandé pour une voix fidèle ;\n"
+            "laisser vide si inconnu) :", parent=self.root) or ""
+        try:
+            add_cloned_voice(name.strip(), path, text)
+        except Exception as exc:  # noqa: BLE001
+            messagebox.showerror("VoixLivre", f"Impossible d'ajouter cette voix :\n{exc}")
+            return
+        self.narrator.reload_clones()
+        self.speaker_box.configure(values=self._voice_names())
+        self.speaker_var.set(name.strip())
+        self.status_var.set(f"Voix « {name.strip()} » ajoutée.")
 
     def _voice_changed(self):
         # petit délai pour ne pas relancer la génération à chaque lettre tapée dans « Style »
@@ -760,7 +892,7 @@ class App:
                                         f"({data[1] + 1}/{len(self.narrator.chunks[ch])})")
                     self._save_progress()
                 elif kind == "buffering":
-                    if self.playing and not self.paused:
+                    if self.playing and not self.paused and not self.status_var.get().startswith("Chargement"):
                         self.status_var.set("Génération de la suite…")
                 elif kind == "finished":
                     self.stop()

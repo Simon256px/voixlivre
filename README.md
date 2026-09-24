@@ -10,15 +10,18 @@ La voix est générée localement sur votre carte graphique avec le modèle
 - Texte affiché, passage en cours **surligné**, défilement automatique
 - Double-clic sur un chapitre ou une phrase pour y lancer la lecture
 - ⏮ ▶/⏸ ⏭ et raccourcis clavier : `Espace` (pause/lecture), `←` `→` (passage précédent/suivant)
-- Choix de la **voix** (9 voix), de la **langue** et du **style** de lecture (liste de styles prêts à l'emploi, modifiable)
+- **10 voix de femmes françaises natives** (lectrices LibriVox clonées, voir [voix/](voix/LISEZMOI.md)),
+  plus les 9 voix intégrées au modèle avec choix du **style** de lecture
+- **Ajout de vos propres voix** à partir d'un extrait audio de 10 à 20 secondes
 - **Reprise automatique** là où vous vous êtes arrêté dans chaque livre
 - Génération par lots et mise en cache : lecture continue sans blanc, sauts instantanés
 
 ## Prérequis
 
 - Windows, Linux ou macOS avec Python 3.10+
-- Une carte graphique **NVIDIA** (≈ 6 Go de mémoire vidéo) est fortement recommandée : sur CPU, la génération est trop lente pour une écoute en continu
-- ~5 Go d'espace disque pour le modèle (téléchargé automatiquement au premier lancement)
+- Une carte graphique **NVIDIA** est fortement recommandée (≈ 6 Go de mémoire vidéo, ≈ 12 Go en utilisant
+  aussi les voix clonées) : sur CPU, la génération est trop lente pour une écoute en continu
+- ~10 Go d'espace disque pour les deux modèles (téléchargés automatiquement au premier usage)
 
 ## Installation
 
@@ -40,7 +43,10 @@ Un petit livre de test, `exemple.epub`, est fourni.
 
 ## Remarques
 
-- Aucune des voix du modèle n'est francophone native : choisir un style contenant « sans accent »
-  réduit nettement l'accent, et certaines voix s'en sortent mieux que d'autres, à tester à l'oreille.
+- Les 9 voix intégrées au modèle ne sont pas francophones natives : pour un français sans accent,
+  préférez les voix clonées (Hélène, Agathe…). Avec les voix intégrées, un style contenant
+  « sans accent » réduit l'accent.
+- Les voix clonées reproduisent le ton de leur extrait : le champ « Style » est alors désactivé.
+- La première utilisation d'une voix clonée charge un second modèle (~20 s).
 - Le message « SoX could not be found » affiché au démarrage est sans conséquence.
 - La progression et les réglages sont enregistrés dans `~/.voixlivre.json`.
