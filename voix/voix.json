@@ -1,37 +1,19 @@
 [
  {
-  "nom": "Léa — veloutée, confiante et posée",
-  "fichier": "lea_posee.flac",
-  "texte": "Il y a des livres que l’on n’oublie jamais. On les ouvre un soir, par hasard, et soudain le monde autour de nous se tait. Chaque phrase devient une porte, et l’on avance, page après page, sans vouloir s’arrêter.",
-  "source": "Voix créée avec Qwen3-TTS-12Hz-1.7B-VoiceDesign (Apache 2.0). Description : A native French woman from France, about 30 years old, speaking standard Parisian French with no foreign accent. Slightly low pitch, velvety and rich timbre, self-assured and composed, measured pacing with gentle authority."
- },
- {
-  "nom": "Léa — veloutée, envoûtante",
-  "fichier": "lea_envoutante.flac",
+  "nom": "Léa",
+  "fichier": "lea.flac",
   "texte": "Il y a des livres que l’on n’oublie jamais. On les ouvre un soir, par hasard, et soudain le monde autour de nous se tait. Chaque phrase devient une porte, et l’on avance, page après page, sans vouloir s’arrêter.",
   "source": "Voix créée avec Qwen3-TTS-12Hz-1.7B-VoiceDesign (Apache 2.0). Description : A native French woman from France, about 30 years old, speaking standard Parisian French with no foreign accent. Slightly low pitch, velvety and rich timbre, self-assured and composed, measured pacing with gentle authority. Her voice is captivating and bewitching: intimate, slightly breathy, soft and melodic, with slow hypnotic pacing and subtle pauses that draw the listener in."
  },
  {
-  "nom": "Clara — sereine, confiante et posée",
-  "fichier": "clara_posee.flac",
-  "texte": "Il y a des livres que l’on n’oublie jamais. On les ouvre un soir, par hasard, et soudain le monde autour de nous se tait. Chaque phrase devient une porte, et l’on avance, page après page, sans vouloir s’arrêter.",
-  "source": "Voix créée avec Qwen3-TTS-12Hz-1.7B-VoiceDesign (Apache 2.0). Description : A native French woman from France, about 30 years old, speaking standard Parisian French with no foreign accent. Medium pitch, warm and smooth timbre, confident and poised, calm steady delivery like an experienced audiobook narrator."
- },
- {
-  "nom": "Clara — sereine, envoûtante",
-  "fichier": "clara_envoutante.flac",
+  "nom": "Clara",
+  "fichier": "clara.flac",
   "texte": "Il y a des livres que l’on n’oublie jamais. On les ouvre un soir, par hasard, et soudain le monde autour de nous se tait. Chaque phrase devient une porte, et l’on avance, page après page, sans vouloir s’arrêter.",
   "source": "Voix créée avec Qwen3-TTS-12Hz-1.7B-VoiceDesign (Apache 2.0). Description : A native French woman from France, about 30 years old, speaking standard Parisian French with no foreign accent. Medium pitch, warm and smooth timbre, confident and poised, calm steady delivery like an experienced audiobook narrator. Her voice is captivating and bewitching: intimate, slightly breathy, soft and melodic, with slow hypnotic pacing and subtle pauses that draw the listener in."
  },
  {
-  "nom": "Margot — claire, confiante et posée",
-  "fichier": "margot_posee.flac",
-  "texte": "Il y a des livres que l’on n’oublie jamais. On les ouvre un soir, par hasard, et soudain le monde autour de nous se tait. Chaque phrase devient une porte, et l’on avance, page après page, sans vouloir s’arrêter.",
-  "source": "Voix créée avec Qwen3-TTS-12Hz-1.7B-VoiceDesign (Apache 2.0). Description : A native French woman from France, about 30 years old, speaking standard Parisian French with no foreign accent. Medium-high pitch, clear and bright timbre with crisp articulation, confident and poised, elegant and composed delivery."
- },
- {
-  "nom": "Margot — claire, envoûtante",
-  "fichier": "margot_envoutante.flac",
+  "nom": "Margot",
+  "fichier": "margot.flac",
   "texte": "Il y a des livres que l’on n’oublie jamais. On les ouvre un soir, par hasard, et soudain le monde autour de nous se tait. Chaque phrase devient une porte, et l’on avance, page après page, sans vouloir s’arrêter.",
   "source": "Voix créée avec Qwen3-TTS-12Hz-1.7B-VoiceDesign (Apache 2.0). Description : A native French woman from France, about 30 years old, speaking standard Parisian French with no foreign accent. Medium-high pitch, clear and bright timbre with crisp articulation, confident and poised, elegant and composed delivery. Her voice is captivating and bewitching: intimate, slightly breathy, soft and melodic, with slow hypnotic pacing and subtle pauses that draw the listener in."
  }

@@ -19,9 +19,10 @@ MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 CLONE_MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"         # pour les voix clonées du dossier voix/
 VOICES_DIR = Path(__file__).resolve().parent / "voix"
 MAX_REF_SECONDS = 20                                       # extrait de référence d'une voix clonée
-# Voix intégrées au modèle proposées dans la liste (le modèle connaît aussi Serena, Vivian, Ryan,
-# Aiden, Eric, Dylan, Uncle_Fu et Ono_Anna). Les voix clonées de voix/ s'y ajoutent.
-SPEAKERS = ["Sohee"]
+# Voix intégrées au modèle proposées dans la liste : nom affiché -> nom dans le modèle (qui connaît
+# aussi Serena, Vivian, Ryan, Aiden, Eric, Dylan, Uncle_Fu et Ono_Anna). Les voix clonées de voix/
+# s'y ajoutent.
+BUILTIN_VOICES = {"Manon": "Sohee"}
 # Styles proposés dans la liste « Style » (le champ reste modifiable à la main).
 # Aucune voix du modèle n'est francophone native : préciser « sans accent » aide beaucoup.
 STYLES = [
@@ -349,7 +350,7 @@ class Narrator:
         self.cond = threading.Condition()
         self.chunks = []                      # chunks[chapitre] -> [(texte, fin_de_paragraphe)]
         self.offsets = []                     # index global du 1er segment de chaque chapitre
-        self.voice = {"speaker": SPEAKERS[0], "language": LANGUAGES[0], "instruct": ""}
+        self.voice = {"speaker": next(iter(BUILTIN_VOICES)), "language": LANGUAGES[0], "instruct": ""}
         self.pos = (0, 0)                     # segment à lire
         self.active = False                   # lecture demandée
         self.paused = False
@@ -375,7 +376,8 @@ class Narrator:
         )
         # qwen_tts ne permet pas d'annuler une génération : on l'interrompt à l'étape suivante
         model.model.talker.register_forward_pre_hook(self._abort_hook)
-        model.generate_custom_voice(text="Bonjour.", language="French", speaker=SPEAKERS[0])  # préchauffage
+        model.generate_custom_voice(text="Bonjour.", language="French",               # préchauffage
+                                    speaker=next(iter(BUILTIN_VOICES.values())))
         with self.cond:
             self.model = model
             self.cond.notify_all()
@@ -421,7 +423,8 @@ class Narrator:
             wavs, sr = self.clone_model.generate_voice_clone(
                 text=texts, language=[voice["language"]] * n, voice_clone_prompt=[prompt] * n)
         else:
-            kwargs = {"text": texts, "language": [voice["language"]] * n, "speaker": [voice["speaker"]] * n}
+            speaker = BUILTIN_VOICES.get(voice["speaker"], voice["speaker"])
+            kwargs = {"text": texts, "language": [voice["language"]] * n, "speaker": [speaker] * n}
             if voice["instruct"].strip():
                 kwargs["instruct"] = [voice["instruct"].strip()] * n
             wavs, sr = self.model.generate_custom_voice(**kwargs)
@@ -829,7 +832,7 @@ class App:
 
     def _voice_names(self):
         # les voix clonées (lectrices françaises natives) d'abord, puis les voix intégrées au modèle
-        return list(self.narrator.clones) + SPEAKERS
+        return list(self.narrator.clones) + list(BUILTIN_VOICES)
 
     def _apply_voice(self):
         self._voice_job = None

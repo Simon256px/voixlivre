@@ -13,11 +13,12 @@ voix, le meilleur de 5 essais a été retenu (intelligibilité vérifiée par Wh
 
 | Voix | Timbre | Hauteur moyenne |
 |---|---|---|
-| Léa — veloutée, confiante et posée / envoûtante | un peu grave, riche | ≈ 180 Hz |
-| Clara — sereine, confiante et posée / envoûtante | médium, chaleureux | ≈ 210 Hz |
-| Margot — claire, confiante et posée / envoûtante | médium-aigu, net | ≈ 240 Hz |
+| Léa | velouté, un peu grave, riche | ≈ 185 Hz |
+| Clara | serein, médium, chaleureux | ≈ 205 Hz |
+| Margot | clair, médium-aigu, net | ≈ 230 Hz |
 
-Les variantes « envoûtante » ont une lecture plus intime, légèrement soufflée et plus lente.
+Toutes trois sont confiantes, avec une lecture envoûtante : intime, légèrement soufflée, lente et
+mélodieuse.
 
 ## Format
 
