@@ -10,9 +10,9 @@ La voix est générée localement sur votre carte graphique avec le modèle
 - Texte affiché, passage en cours **surligné**, défilement automatique
 - Double-clic sur un chapitre ou une phrase pour y lancer la lecture
 - ⏮ ▶/⏸ ⏭ et raccourcis clavier : `Espace` (pause/lecture), `←` `→` (passage précédent/suivant)
-- **10 voix de femmes françaises natives** (lectrices LibriVox clonées, voir [voix/](voix/LISEZMOI.md)),
-  plus les 9 voix intégrées au modèle avec choix du **style** de lecture
-- **Ajout de vos propres voix** à partir d'un extrait audio de 10 à 20 secondes
+- Voix **Sohee** intégrée au modèle, avec choix du **style** de lecture
+- **Voix clonées** : ajoutez n'importe quelle voix à partir d'un extrait audio de 10 à 20 secondes
+  (voir [voix/](voix/LISEZMOI.md))
 - **Reprise automatique** là où vous vous êtes arrêté dans chaque livre
 - Génération par lots et mise en cache : lecture continue sans blanc, sauts instantanés
 
@@ -43,9 +43,8 @@ Un petit livre de test, `exemple.epub`, est fourni.
 
 ## Remarques
 
-- Les 9 voix intégrées au modèle ne sont pas francophones natives : pour un français sans accent,
-  préférez les voix clonées (Hélène, Agathe…). Avec les voix intégrées, un style contenant
-  « sans accent » réduit l'accent.
+- Sohee n'est pas une voix francophone native : un style contenant « sans accent » réduit l'accent ;
+  pour un français parfaitement natif, ajoutez une voix clonée d'un lecteur francophone.
 - Les voix clonées reproduisent le ton de leur extrait : le champ « Style » est alors désactivé.
 - La première utilisation d'une voix clonée charge un second modèle (~20 s).
 - Le message « SoX could not be found » affiché au démarrage est sans conséquence.

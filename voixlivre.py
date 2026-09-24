@@ -19,7 +19,9 @@ MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
 CLONE_MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"         # pour les voix clonées du dossier voix/
 VOICES_DIR = Path(__file__).resolve().parent / "voix"
 MAX_REF_SECONDS = 20                                       # extrait de référence d'une voix clonée
-SPEAKERS = ["Serena", "Vivian", "Ryan", "Aiden", "Eric", "Dylan", "Uncle_Fu", "Ono_Anna", "Sohee"]
+# Voix intégrées au modèle proposées dans la liste (le modèle connaît aussi Serena, Vivian, Ryan,
+# Aiden, Eric, Dylan, Uncle_Fu et Ono_Anna). Les voix clonées de voix/ s'y ajoutent.
+SPEAKERS = ["Sohee"]
 # Styles proposés dans la liste « Style » (le champ reste modifiable à la main).
 # Aucune voix du modèle n'est francophone native : préciser « sans accent » aide beaucoup.
 STYLES = [
