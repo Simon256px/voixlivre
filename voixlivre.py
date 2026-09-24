@@ -347,6 +347,7 @@ class Narrator:
         self.clone_model = None               # chargé à la première voix clonée utilisée
         self.clones = load_cloned_voices()
         self.clone_prompts = {}               # nom -> empreinte de la voix, calculée une fois
+        self.clone_lock = threading.Lock()    # préchargement et génération peuvent se croiser
         self.cond = threading.Condition()
         self.chunks = []                      # chunks[chapitre] -> [(texte, fin_de_paragraphe)]
         self.offsets = []                     # index global du 1er segment de chaque chapitre
@@ -389,6 +390,18 @@ class Narrator:
 
     def _clone_prompt(self, name):
         """Charge (une seule fois) le modèle de clonage et l'empreinte de la voix `name`."""
+        with self.clone_lock:
+            return self._clone_prompt_locked(name)
+
+    def preload_clone(self, name):
+        """Prépare en arrière-plan une voix clonée pour que la lecture démarre sans attendre."""
+        try:
+            self._clone_prompt(name)
+            self.post("voice_ready", name)
+        except Exception:  # noqa: BLE001 — la génération réessaiera et affichera l'erreur
+            pass
+
+    def _clone_prompt_locked(self, name):
         if self.clone_model is None:
             import torch
             from qwen_tts import Qwen3TTSModel
@@ -418,16 +431,19 @@ class Narrator:
     def synthesize(self, texts, voice):
         """Génère plusieurs segments d'un coup (bien plus rapide qu'un par un)."""
         n = len(texts)
+        # durée audio plafonnée d'après le texte le plus long (≥ 7 caractères/s, + 4 s) : un segment
+        # qui divague est coupé au lieu de bloquer tout le lot (le modèle produit 12 trames/s)
+        limit = {"max_new_tokens": int(12 * (max(map(len, texts)) / 7 + 4))}
         if voice["speaker"] in self.clones:
             prompt = self._clone_prompt(voice["speaker"])
             wavs, sr = self.clone_model.generate_voice_clone(
-                text=texts, language=[voice["language"]] * n, voice_clone_prompt=[prompt] * n)
+                text=texts, language=[voice["language"]] * n, voice_clone_prompt=[prompt] * n, **limit)
         else:
             speaker = BUILTIN_VOICES.get(voice["speaker"], voice["speaker"])
             kwargs = {"text": texts, "language": [voice["language"]] * n, "speaker": [speaker] * n}
             if voice["instruct"].strip():
                 kwargs["instruct"] = [voice["instruct"].strip()] * n
-            wavs, sr = self.model.generate_custom_voice(**kwargs)
+            wavs, sr = self.model.generate_custom_voice(**kwargs, **limit)
         return [_trim(np.asarray(w, dtype=np.float32).reshape(-1), sr) for w in wavs], sr
 
     def _synthesize_checked(self, texts, voice):
@@ -809,7 +825,10 @@ class App:
         ttk.Combobox(controls, textvariable=self.lang_var, values=LANGUAGES, width=10,
                      state="readonly", font=f["ui"]).pack(side="left")
         field("Style")
-        self.instruct_var = tk.StringVar(value=self.progress.get("_voice", {}).get("instruct", STYLES[0]))
+        # les voix clonées ne suivent pas de consigne de style : on le signale à côté du champ
+        self.style_note = tk.Label(controls, font=f["small"], bg=CLOUD, fg=OCHRE)
+        self.style_note.pack(side="left", padx=(0, 6))
+        self.instruct_var = tk.StringVar(value=self.progress.get("_voice", {}).get("instruct") or STYLES[0])
         self.style_box = ttk.Combobox(controls, textvariable=self.instruct_var, values=STYLES, font=f["ui"])
         self.style_box.pack(side="left", fill="x", expand=True)
         for var in (self.speaker_var, self.lang_var, self.instruct_var):
@@ -1009,14 +1028,22 @@ class App:
         # les voix clonées (lectrices françaises natives) d'abord, puis les voix intégrées au modèle
         return list(self.narrator.clones) + list(BUILTIN_VOICES)
 
+    def _preload_voice(self):
+        name = self.speaker_var.get()
+        ready = self.narrator.model is not None
+        if ready and name in self.narrator.clones and name not in self.narrator.clone_prompts:
+            threading.Thread(target=self.narrator.preload_clone, args=(name,), daemon=True).start()
+
     def _apply_voice(self):
         self._voice_job = None
         cloned = self.speaker_var.get() in self.narrator.clones
         # le modèle de clonage reproduit le ton de l'extrait et ne suit pas de consigne de style
         self.style_box.state(["disabled"] if cloned else ["!disabled"])
+        self.style_note.configure(text=_track(f"({' / '.join(BUILTIN_VOICES)} uniquement)") if cloned else "")
         self.narrator.set_voice({"speaker": self.speaker_var.get(), "language": self.lang_var.get(),
                                  "instruct": "" if cloned else self.instruct_var.get()})
         self.stat_vars["voice"].set(self.speaker_var.get())
+        self._preload_voice()
 
     def add_voice(self):
         from tkinter import simpledialog
@@ -1065,6 +1092,7 @@ class App:
                     self.status_var.set("Modèle prêt" + ("" if data else " (CPU : la génération sera lente)")
                                         + (" — appuyez sur ▶" if self.chapters else " — ouvrez un livre"))
                     self._update_buttons()
+                    self._preload_voice()
                 elif kind == "playing":
                     self.current = data
                     self._highlight(*data)
@@ -1072,6 +1100,9 @@ class App:
                     self.status_var.set(f"Lecture — {self.chapters[ch][0]}  "
                                         f"({data[1] + 1}/{len(self.narrator.chunks[ch])})")
                     self._save_progress()
+                elif kind == "voice_ready":
+                    if not self.playing:
+                        self.status_var.set(f"Voix « {data} » prête — appuyez sur ▶")
                 elif kind == "buffering":
                     if self.playing and not self.paused and not self.status_var.get().startswith("Chargement"):
                         self.status_var.set("Génération de la suite…")
@@ -1112,7 +1143,33 @@ class App:
         self.root.destroy()
 
 
+def _fix_windowless_stdio():
+    """Lancé par VoixLivre.bat (pythonw), le programme n'a pas de console : sys.stdout/stderr valent
+    None et les poignées standard de Windows sont invalides. Le paquet `sox`, importé par qwen_tts,
+    lance alors « sox -h » et échoue (WinError 50), ce qui empêche le modèle de se charger.
+    On redirige donc la sortie vers un journal, ~/.voixlivre.log, qui sert aussi en cas de problème.
+    """
+    if sys.stdout is not None and sys.stderr is not None:
+        return
+    import os
+
+    log = open(Path.home() / ".voixlivre.log", "w", encoding="utf-8", buffering=1)
+    sys.stdout = sys.stderr = log
+    if sys.platform == "win32":
+        import ctypes
+        import msvcrt
+
+        kernel32 = ctypes.windll.kernel32
+        kernel32.SetStdHandle.argtypes = (ctypes.c_ulong, ctypes.c_void_p)
+        nul = open(os.devnull, "rb")
+        sys._voixlivre_stdin = nul                                   # garde le fichier ouvert
+        kernel32.SetStdHandle(ctypes.c_ulong(-10 & 0xFFFFFFFF), msvcrt.get_osfhandle(nul.fileno()))
+        for std in (-11, -12):                                       # STD_OUTPUT_HANDLE, STD_ERROR_HANDLE
+            kernel32.SetStdHandle(ctypes.c_ulong(std & 0xFFFFFFFF), msvcrt.get_osfhandle(log.fileno()))
+
+
 def main():
+    _fix_windowless_stdio()
     load_fonts()
     root = tk.Tk()
     App(root, sys.argv[1] if len(sys.argv) > 1 else None)
