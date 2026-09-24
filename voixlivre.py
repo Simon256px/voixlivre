@@ -1,4 +1,4 @@
-"""VoixLivre : écouter un ebook (EPUB, TXT, PDF) avec Qwen3-TTS CustomVoice.
+"""VoixLivre : écouter un ebook (EPUB, TXT, PDF) avec Qwen3-TTS.
 
 Lancement :  python voixlivre.py [livre.epub]
 """
@@ -605,6 +605,92 @@ class Narrator:
 
 # ---------------------------------------------------------------- interface
 
+# Identité visuelle de MontLivre (https://simon256px.github.io/MontLivre/)
+COAL, ASH, CLOUD, PAPER = "#000000", "#a0a0a0", "#e1e1e1", "#f2f0ea"
+YOLK, OCHRE, MUTED, INK = "#ffa51e", "#ff5500", "#5c5c5c", "#16130f"
+ASSETS = Path(__file__).resolve().parent / "assets"
+
+
+def load_fonts():
+    """Rend Archivo et Literata (dossier assets/fonts) disponibles pour cette application seulement."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+
+    for font in (ASSETS / "fonts").glob("*.ttf"):
+        ctypes.windll.gdi32.AddFontResourceExW(str(font), 0x10, 0)      # FR_PRIVATE
+
+
+def _fonts(root):
+    import tkinter.font as tkfont
+
+    have = set(tkfont.families(root))
+    pick = lambda *names: next((n for n in names if n in have), names[-1])
+    sans, black, serif = pick("Archivo", "Segoe UI"), pick("Archivo Black", "Segoe UI Black"), \
+        pick("Literata 12pt", "Georgia")
+    return {
+        "title": (black, 30), "big": (black, 17), "small": (sans, 8, "bold"), "button": (sans, 9, "bold"),
+        "ui": (sans, 10), "text": (serif, 13), "symbol": ("Segoe UI Symbol", 13),
+    }
+
+
+def _track(text):
+    """Capitales espacées, à la manière des petits titres de MontLivre (Tk n'a pas de letter-spacing)."""
+    return " ".join(text.upper()).replace("   ", "  ")
+
+
+class FlatButton(tk.Frame):
+    """Bouton plat façon MontLivre : bordure noire de 2 px, pas d'arrondi, survol inversé."""
+
+    COLORS = {  # type : (fond, texte, fond survolé, texte survolé)
+        "solid": (COAL, CLOUD, OCHRE, COAL),
+        "ghost": (CLOUD, COAL, COAL, CLOUD),
+        "accent": (OCHRE, COAL, COAL, OCHRE),
+    }
+
+    def __init__(self, parent, text, command, kind="solid", font=None, width=None, padx=16, pady=7):
+        super().__init__(parent, bg=COAL, padx=2, pady=2)
+        self.kind, self.command, self.disabled, self.hover = kind, command, False, False
+        self.label = tk.Label(self, text=text, font=font, width=width, padx=padx, pady=pady, cursor="hand2")
+        self.label.pack(fill="both", expand=True)
+        for w in (self, self.label):
+            w.bind("<Button-1>", lambda e: None if self.disabled else self.command())
+            w.bind("<Enter>", lambda e: self._set_hover(True))
+            w.bind("<Leave>", lambda e: self._set_hover(False))
+        self._paint()
+
+    def _set_hover(self, on):
+        self.hover = on
+        self._paint()
+
+    def _paint(self):
+        bg, fg, hbg, hfg = self.COLORS[self.kind]
+        if self.disabled:
+            self.configure(bg=ASH)
+            self.label.configure(bg=CLOUD, fg=ASH, cursor="arrow")
+        else:
+            self.configure(bg=COAL)
+            self.label.configure(bg=hbg if self.hover else bg, fg=hfg if self.hover else fg, cursor="hand2")
+
+    # compatibilité avec l'API des boutons ttk utilisée par l'application
+    def configure(self, cnf=None, **kw):
+        if "text" in kw:
+            return self.label.configure(text=kw.pop("text"))
+        return super().configure(cnf, **kw)
+
+    config = configure
+
+    def cget(self, key):
+        return self.label.cget(key) if key == "text" else super().cget(key)
+
+    def state(self, spec):
+        self.disabled = "disabled" in spec
+        self._paint()
+
+    def instate(self, spec):
+        return self.disabled == ("disabled" in spec)
+
+
 class App:
     def __init__(self, root, initial=None):
         self.root = root
@@ -619,8 +705,8 @@ class App:
         self.progress = self._load_progress()
 
         root.title("VoixLivre")
-        root.geometry("980x640")
-        root.minsize(700, 450)
+        root.geometry("1180x800")
+        root.minsize(900, 620)
         self._build_ui()
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         root.after(100, self._poll)
@@ -631,76 +717,162 @@ class App:
 
     # -- construction
     def _build_ui(self):
+        root = self.root
+        f = self.fonts = _fonts(root)
+        root.configure(bg=CLOUD)
+        try:
+            icon = tk.PhotoImage(file=str(ASSETS / "icon.png"))
+            self._icons = (icon.subsample(16), icon.subsample(32))       # 64 px et 32 px
+            root.iconphoto(True, self._icons[0])
+        except tk.TclError:
+            self._icons = None
+
         style = ttk.Style()
-        if "vista" in style.theme_names():
-            style.theme_use("vista")
-        style.configure("Big.TButton", font=("Segoe UI", 13), padding=(10, 4))
+        style.theme_use("clam")
+        style.configure("TCombobox", fieldbackground=PAPER, background=CLOUD, foreground=COAL,
+                        arrowcolor=COAL, bordercolor=COAL, lightcolor=PAPER, darkcolor=PAPER,
+                        padding=5, arrowsize=13)
+        style.map("TCombobox",
+                  fieldbackground=[("disabled", CLOUD), ("readonly", PAPER)],
+                  foreground=[("disabled", ASH)], bordercolor=[("disabled", ASH)],
+                  arrowcolor=[("disabled", ASH)], background=[("active", YOLK)],
+                  selectbackground=[("readonly", PAPER), ("!readonly", YOLK)],
+                  selectforeground=[("readonly", COAL), ("!readonly", COAL)])
+        style.configure("Vertical.TScrollbar", background=CLOUD, troughcolor=PAPER, bordercolor=PAPER,
+                        lightcolor=CLOUD, darkcolor=CLOUD, arrowcolor=COAL, gripcount=0)
+        style.map("Vertical.TScrollbar", background=[("active", YOLK)])
+        root.option_add("*TCombobox*Listbox.background", PAPER)
+        root.option_add("*TCombobox*Listbox.foreground", COAL)
+        root.option_add("*TCombobox*Listbox.selectBackground", COAL)
+        root.option_add("*TCombobox*Listbox.selectForeground", CLOUD)
+        root.option_add("*TCombobox*Listbox.font", f["ui"])
+        small = lambda parent, text, **kw: tk.Label(parent, text=_track(text), font=f["small"],
+                                                     bg=kw.pop("bg", CLOUD), fg=kw.pop("fg", MUTED), **kw)
 
-        top = ttk.Frame(self.root, padding=(10, 8))
-        top.pack(fill="x")
-        ttk.Button(top, text="Ouvrir un livre…", command=self.choose_file).pack(side="left")
-        ttk.Button(top, text="Ajouter une voix…", command=self.add_voice).pack(side="right")
-        self.title_var = tk.StringVar(value="Aucun livre ouvert")
-        ttk.Label(top, textvariable=self.title_var, font=("Segoe UI", 11, "bold")).pack(side="left", padx=12)
+        # en-tête : icône, sur-titre, titre du livre en très grandes capitales, filet noir
+        head = tk.Frame(root, bg=CLOUD, padx=28, pady=16)
+        head.pack(fill="x")
+        brand = tk.Frame(head, bg=CLOUD)
+        brand.pack(fill="x")
+        if self._icons:
+            tk.Label(brand, image=self._icons[1], bg=CLOUD).pack(side="left", padx=(0, 10))
+        small(brand, "VoixLivre — lecture à voix haute").pack(side="left")
+        FlatButton(brand, _track("Ajouter une voix"), self.add_voice, "ghost", f["button"]).pack(side="right")
+        FlatButton(brand, _track("Ouvrir un livre"), self.choose_file, "solid", f["button"]).pack(
+            side="right", padx=(0, 10))
+        self.title_var = tk.StringVar(value="AUCUN LIVRE")
+        tk.Label(head, textvariable=self.title_var, font=f["title"], bg=CLOUD, fg=COAL, anchor="w").pack(
+            fill="x", pady=(12, 8))
+        tk.Frame(head, bg=COAL, height=2).pack(fill="x")
 
-        body = ttk.PanedWindow(self.root, orient="horizontal")
-        body.pack(fill="both", expand=True, padx=10)
+        # pied : bandeau orange de chiffres clés, commandes, état
+        foot = tk.Frame(root, bg=CLOUD, padx=28)
+        foot.pack(side="bottom", fill="x", pady=(0, 14))
+        self.status_var = tk.StringVar(value="Démarrage…")
+        tk.Label(foot, textvariable=self.status_var, font=f["ui"], bg=CLOUD, fg=MUTED, anchor="w").pack(
+            side="bottom", fill="x", pady=(8, 0))
 
-        left = ttk.Frame(body)
-        ttk.Label(left, text="Chapitres").pack(anchor="w")
-        self.chap_list = tk.Listbox(left, activestyle="none", borderwidth=0, highlightthickness=1,
-                                    font=("Segoe UI", 10), exportselection=False)
-        self.chap_list.pack(fill="both", expand=True, pady=(2, 0))
-        self.chap_list.bind("<Double-Button-1>", lambda e: self.play_chapter())
-        self.chap_list.bind("<<ListboxSelect>>", lambda e: self._show_selected_chapter())
-        body.add(left, weight=1)
+        band = tk.Frame(foot, bg=COAL, padx=2, pady=2)
+        band.pack(side="bottom", fill="x", pady=(12, 0))
+        self.stat_vars = {}
+        for col, (key, label) in enumerate((("chapter", "Chapitre"), ("progress", "Progression"),
+                                            ("voice", "Voix"))):
+            cell = tk.Frame(band, bg=OCHRE, padx=16, pady=8)
+            cell.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 2, 0))
+            band.columnconfigure(col, weight=1, uniform="stats")
+            small(cell, label, bg=OCHRE, fg=COAL).pack(anchor="w")
+            self.stat_vars[key] = tk.StringVar(value="—")
+            tk.Label(cell, textvariable=self.stat_vars[key], font=f["big"], bg=OCHRE, fg=COAL,
+                     anchor="w").pack(anchor="w")
 
-        right = ttk.Frame(body)
-        self.text = tk.Text(right, wrap="word", font=("Georgia", 12), padx=18, pady=12,
-                            borderwidth=0, highlightthickness=1, spacing2=3, cursor="arrow")
-        scroll = ttk.Scrollbar(right, command=self.text.yview)
-        self.text.configure(yscrollcommand=scroll.set, state="disabled")
-        self.text.tag_configure("current", background="#fff1b8")
-        self.text.pack(side="left", fill="both", expand=True)
-        scroll.pack(side="right", fill="y")
-        body.add(right, weight=4)
-
-        controls = ttk.Frame(self.root, padding=(10, 8))
-        controls.pack(fill="x")
-        self.btn_prev = ttk.Button(controls, text="⏮", width=4, style="Big.TButton", command=self.prev_chunk)
-        self.btn_play = ttk.Button(controls, text="▶", width=4, style="Big.TButton", command=self.toggle_play)
-        self.btn_next = ttk.Button(controls, text="⏭", width=4, style="Big.TButton", command=self.next_chunk)
+        controls = tk.Frame(foot, bg=CLOUD)
+        controls.pack(side="bottom", fill="x", pady=(14, 0))
+        self.btn_prev = FlatButton(controls, "⏮", self.prev_chunk, "ghost", f["symbol"], width=3, pady=3)
+        self.btn_play = FlatButton(controls, "▶", self.toggle_play, "accent", f["symbol"], width=4, pady=3)
+        self.btn_next = FlatButton(controls, "⏭", self.next_chunk, "ghost", f["symbol"], width=3, pady=3)
         for b in (self.btn_prev, self.btn_play, self.btn_next):
-            b.pack(side="left", padx=2)
+            b.pack(side="left", padx=(0, 6))
             b.state(["disabled"])
 
-        ttk.Label(controls, text="Voix").pack(side="left", padx=(20, 4))
+        def field(label, pad=18):
+            small(controls, label).pack(side="left", padx=(pad, 6))
+
+        field("Voix", 22)
         voices = self._voice_names()
         saved = self.progress.get("_voice", {}).get("speaker")
         self.speaker_var = tk.StringVar(value=saved if saved in voices else voices[0])
-        self.speaker_box = ttk.Combobox(controls, textvariable=self.speaker_var, values=voices, width=26,
-                                        state="readonly", height=25)
+        self.speaker_box = ttk.Combobox(controls, textvariable=self.speaker_var, values=voices, width=12,
+                                        state="readonly", height=25, font=f["ui"])
         self.speaker_box.pack(side="left")
-        ttk.Label(controls, text="Langue").pack(side="left", padx=(12, 4))
+        field("Langue")
         self.lang_var = tk.StringVar(value=self.progress.get("_voice", {}).get("language", LANGUAGES[0]))
         ttk.Combobox(controls, textvariable=self.lang_var, values=LANGUAGES, width=10,
-                     state="readonly").pack(side="left")
-        ttk.Label(controls, text="Style").pack(side="left", padx=(12, 4))
-        self.instruct_var = tk.StringVar(value=self.progress.get("_voice", {}).get(
-            "instruct", STYLES[0]))
-        self.style_box = ttk.Combobox(controls, textvariable=self.instruct_var, values=STYLES)
+                     state="readonly", font=f["ui"]).pack(side="left")
+        field("Style")
+        self.instruct_var = tk.StringVar(value=self.progress.get("_voice", {}).get("instruct", STYLES[0]))
+        self.style_box = ttk.Combobox(controls, textvariable=self.instruct_var, values=STYLES, font=f["ui"])
         self.style_box.pack(side="left", fill="x", expand=True)
         for var in (self.speaker_var, self.lang_var, self.instruct_var):
             var.trace_add("write", lambda *_: self._voice_changed())
         self._apply_voice()
 
-        self.status_var = tk.StringVar(value="Démarrage…")
-        ttk.Label(self.root, textvariable=self.status_var, anchor="w", padding=(10, 0, 10, 6),
-                  foreground="#666").pack(fill="x")
+        # corps : chapitres à gauche, page du livre à droite (carte papier à ombre portée)
+        body = tk.Frame(root, bg=CLOUD, padx=28, pady=6)
+        body.pack(fill="both", expand=True)
+        body.columnconfigure(1, weight=1)
+        body.rowconfigure(1, weight=1)
 
-        self.root.bind("<space>", lambda e: None if isinstance(e.widget, (tk.Entry, ttk.Entry)) else self.toggle_play())
-        self.root.bind("<Left>", lambda e: self.prev_chunk())
-        self.root.bind("<Right>", lambda e: self.next_chunk())
+        small(body, "Chapitres").grid(row=0, column=0, sticky="w", pady=(0, 6))
+        left = tk.Frame(body, bg=COAL, padx=2, pady=2)
+        left.grid(row=1, column=0, sticky="ns", padx=(0, 22), pady=(0, 8))
+        inner = tk.Frame(left, bg=CLOUD, padx=8, pady=8)
+        inner.pack(fill="both", expand=True)
+        self.chap_list = tk.Listbox(inner, activestyle="none", borderwidth=0, highlightthickness=0,
+                                    font=f["ui"], width=32, bg=CLOUD, fg=COAL, selectbackground=COAL,
+                                    selectforeground=CLOUD, exportselection=False)
+        self.chap_list.pack(fill="both", expand=True)
+        self.chap_list.bind("<Double-Button-1>", lambda e: self.play_chapter())
+        self.chap_list.bind("<<ListboxSelect>>", lambda e: self._show_selected_chapter())
+
+        small(body, "Lecture").grid(row=0, column=1, sticky="w", pady=(0, 6))
+        holder = tk.Frame(body, bg=CLOUD)
+        holder.grid(row=1, column=1, sticky="nsew")
+        tk.Frame(holder, bg=COAL).place(x=8, y=8, relwidth=1, relheight=1, width=-8, height=-8)  # ombre
+        card = tk.Frame(holder, bg=COAL, padx=2, pady=2)
+        card.place(x=0, y=0, relwidth=1, relheight=1, width=-8, height=-8)
+        page = tk.Frame(card, bg=PAPER)
+        page.pack(fill="both", expand=True)
+        bar = tk.Frame(page, bg=PAPER, padx=14, pady=8)
+        bar.pack(fill="x")
+        self.bar_title, self.bar_count = tk.StringVar(), tk.StringVar()
+        tk.Label(bar, textvariable=self.bar_title, font=f["small"], bg=PAPER, fg=MUTED).pack(side="left")
+        tk.Label(bar, textvariable=self.bar_count, font=f["small"], bg=PAPER, fg=MUTED).pack(side="right")
+        tk.Frame(page, bg=COAL, height=1).pack(fill="x")
+        self.text = tk.Text(page, wrap="word", font=f["text"], padx=40, pady=24, bg=PAPER, fg=INK,
+                            borderwidth=0, highlightthickness=0, spacing1=2, spacing2=5, cursor="arrow",
+                            selectbackground=YOLK, inactiveselectbackground=YOLK)
+        scroll = ttk.Scrollbar(page, command=self.text.yview)
+        self.text.configure(yscrollcommand=scroll.set, state="disabled")
+        self.text.tag_configure("current", background=YOLK)
+        scroll.pack(side="right", fill="y")
+        self.text.pack(side="left", fill="both", expand=True)
+
+        root.bind("<space>", lambda e: None if isinstance(e.widget, (tk.Entry, ttk.Entry)) else self.toggle_play())
+        root.bind("<Left>", lambda e: self.prev_chunk())
+        root.bind("<Right>", lambda e: self.next_chunk())
+
+    def _update_stats(self, ch, idx):
+        """Bandeau orange et barre de la page : chapitre, progression, voix."""
+        self.stat_vars["voice"].set(self.speaker_var.get())
+        if not self.chapters:
+            return
+        chunks = self.narrator.chunks
+        done = sum(len(c) for c in chunks[:ch]) + idx
+        total = max(sum(len(c) for c in chunks), 1)
+        self.stat_vars["chapter"].set(f"{ch + 1} / {len(self.chapters)}")
+        self.stat_vars["progress"].set(f"{100 * done // total} %")
+        self.bar_title.set(_track(self.chapters[ch][0][:48]))
+        self.bar_count.set(f"{idx + 1} / {len(chunks[ch])}")
 
     # -- modèle
     def _load_model_safe(self):
@@ -728,7 +900,9 @@ class App:
         self.book_path = str(Path(path).resolve())
         self.chapters = chapters
         self.narrator.load([split_chunks(text) for _, text in chapters])
-        self.title_var.set(Path(path).stem)
+        # titre du fichier sans les mentions entre parenthèses (auteur, site…)
+        title = re.sub(r"\s*[(\[][^)\]]*[)\]]", "", Path(path).stem).strip() or Path(path).stem
+        self.title_var.set(title.upper()[:44] + ("…" if len(title) > 44 else ""))
         self.chap_list.delete(0, "end")
         for title, _ in chapters:
             self.chap_list.insert("end", title)
@@ -771,6 +945,7 @@ class App:
         if ranges:
             self.text.tag_add("current", ranges[0], ranges[1])
             self.text.see(ranges[0])
+        self._update_stats(ch, idx)
 
     # -- lecture
     def _ready(self):
@@ -841,6 +1016,7 @@ class App:
         self.style_box.state(["disabled"] if cloned else ["!disabled"])
         self.narrator.set_voice({"speaker": self.speaker_var.get(), "language": self.lang_var.get(),
                                  "instruct": "" if cloned else self.instruct_var.get()})
+        self.stat_vars["voice"].set(self.speaker_var.get())
 
     def add_voice(self):
         from tkinter import simpledialog
@@ -920,7 +1096,9 @@ class App:
     def _save_progress(self):
         if self.book_path:
             self.progress[self.book_path] = list(self.current)
-        self.progress["_voice"] = dict(self.narrator.voice)
+        # réglages tels qu'affichés (le style reste mémorisé même s'il est inactif pour une voix clonée)
+        self.progress["_voice"] = {"speaker": self.speaker_var.get(), "language": self.lang_var.get(),
+                                   "instruct": self.instruct_var.get()}
         try:
             PROGRESS_FILE.write_text(json.dumps(self.progress, ensure_ascii=False, indent=1), encoding="utf-8")
         except OSError:
@@ -935,6 +1113,7 @@ class App:
 
 
 def main():
+    load_fonts()
     root = tk.Tk()
     App(root, sys.argv[1] if len(sys.argv) > 1 else None)
     root.mainloop()

@@ -4,6 +4,11 @@
 La voix est générée localement sur votre carte graphique avec le modèle
 [Qwen3-TTS-12Hz-1.7B-CustomVoice](https://huggingface.co/Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice).
 
+![VoixLivre](assets/capture.png)
+
+L'interface reprend l'identité visuelle de [MontLivre](https://simon256px.github.io/MontLivre/) :
+polices Archivo et Literata, noir, gris nuage, papier et orange.
+
 ## Fonctionnalités
 
 - Ouverture de livres **EPUB**, **TXT** et **PDF**, avec la liste des chapitres
@@ -50,3 +55,9 @@ Un petit livre de test, `exemple.epub`, est fourni.
 - La première utilisation d'une voix clonée charge un second modèle (~20 s).
 - Le message « SoX could not be found » affiché au démarrage est sans conséquence.
 - La progression et les réglages sont enregistrés dans `~/.voixlivre.json`.
+
+## Crédits
+
+- Polices [Archivo](https://github.com/Omnibus-Type/Archivo) et [Literata](https://github.com/googlefonts/literata),
+  licence SIL Open Font License 1.1 (`assets/fonts/`).
+- Icône et identité visuelle : [MontLivre](https://github.com/Simon256px/MontLivre).
