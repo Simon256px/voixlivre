@@ -544,8 +544,11 @@ class Narrator:
             if p[0] >= len(self.chunks):
                 reached_end = True
                 break
-        # on attend d'avoir un lot complet, sauf si le passage courant manque
-        if missing and (missing[0] == self.pos or len(missing) >= BATCH or reached_end):
+        # passage courant manquant (démarrage, saut) : petit lot pour entendre la voix au plus vite
+        if missing and missing[0] == self.pos:
+            return missing[:2]
+        # sinon on attend d'avoir un lot complet, plus efficace
+        if missing and (len(missing) >= BATCH or reached_end):
             return missing[:BATCH]
         return []
 
@@ -624,6 +627,7 @@ class Narrator:
 # Identité visuelle de MontLivre (https://simon256px.github.io/MontLivre/)
 COAL, ASH, CLOUD, PAPER = "#000000", "#a0a0a0", "#e1e1e1", "#f2f0ea"
 YOLK, OCHRE, MUTED, INK = "#ffa51e", "#ff5500", "#5c5c5c", "#16130f"
+VIOLET, MARKER = "#7d00ff", "#dcc4ff"          # surlignage personnel : violet MontLivre (#7d00ff) éclairci, distinct du jaune de lecture
 ASSETS = Path(__file__).resolve().parent / "assets"
 
 
@@ -648,6 +652,14 @@ def _fonts(root):
         "title": (black, 30), "big": (black, 17), "small": (sans, 8, "bold"), "button": (sans, 9, "bold"),
         "ui": (sans, 10), "text": (serif, 13), "symbol": ("Segoe UI Symbol", 13),
     }
+
+
+def _count(text_widget, start, end, what):
+    """Text.count renvoie selon les cas un entier, un tuple ou None : on ramène tout à un entier."""
+    value = text_widget.count(start, end, "update", what)
+    if isinstance(value, tuple):
+        value = value[0]
+    return value or 0
 
 
 def _track(text):
@@ -718,6 +730,9 @@ class App:
         self.playing = False
         self.paused = False
         self.displayed_chapter = None
+        self.bookmark = None              # (chapitre, segment) où l'on s'est arrêté
+        self.highlights = {}              # "chapitre" -> [[début, fin, texte], …] en caractères
+        self._scroll_job = None
         self.progress = self._load_progress()
 
         root.title("VoixLivre")
@@ -725,7 +740,7 @@ class App:
         root.minsize(900, 620)
         self._build_ui()
         root.protocol("WM_DELETE_WINDOW", self.on_close)
-        root.after(100, self._poll)
+        self._poll_job = root.after(100, self._poll)
 
         threading.Thread(target=self._load_model_safe, daemon=True).start()
         if initial:
@@ -854,6 +869,16 @@ class App:
         self.chap_list.bind("<<ListboxSelect>>", lambda e: self._show_selected_chapter())
 
         small(body, "Lecture").grid(row=0, column=1, sticky="w", pady=(0, 6))
+        tools = tk.Frame(body, bg=CLOUD)
+        tools.grid(row=0, column=1, sticky="e", padx=(0, 8), pady=(0, 6))
+        self.btn_mark = FlatButton(tools, _track("Surligner"), self.add_highlight, "ghost", f["small"],
+                                   padx=10, pady=3)
+        self.btn_mark.pack(side="left", padx=(0, 8))
+        self.btn_mark.state(["disabled"])
+        self.btn_bookmark = FlatButton(tools, _track("Aller au marque-page"), self.goto_bookmark, "ghost",
+                                       f["small"], padx=10, pady=3)
+        self.btn_bookmark.pack(side="left")
+        self.btn_bookmark.state(["disabled"])
         holder = tk.Frame(body, bg=CLOUD)
         holder.grid(row=1, column=1, sticky="nsew")
         tk.Frame(holder, bg=COAL).place(x=8, y=8, relwidth=1, relheight=1, width=-8, height=-8)  # ombre
@@ -868,13 +893,32 @@ class App:
         tk.Label(bar, textvariable=self.bar_count, font=f["small"], bg=PAPER, fg=MUTED).pack(side="right")
         tk.Frame(page, bg=COAL, height=1).pack(fill="x")
         self.text = tk.Text(page, wrap="word", font=f["text"], padx=40, pady=24, bg=PAPER, fg=INK,
-                            borderwidth=0, highlightthickness=0, spacing1=2, spacing2=5, cursor="arrow",
-                            selectbackground=YOLK, inactiveselectbackground=YOLK)
+                            borderwidth=0, highlightthickness=0, spacing1=2, spacing2=5, cursor="xterm",
+                            selectbackground=COAL, selectforeground=PAPER, inactiveselectbackground=ASH)
         scroll = ttk.Scrollbar(page, command=self.text.yview)
-        self.text.configure(yscrollcommand=scroll.set, state="disabled")
+        self.text.configure(yscrollcommand=lambda *a: (scroll.set(*a), self._place_ribbon()),
+                            state="disabled")
+        # fond violet clair + soulignement violet : reste visible même sous le jaune du passage lu
+        self.text.tag_configure("marker", background=MARKER, underline=True, underlinefg=VIOLET)
         self.text.tag_configure("current", background=YOLK)
+        self.text.tag_raise("current", "marker")        # le passage lu reste visible sur un surlignage
+        self.text.tag_raise("sel")
         scroll.pack(side="right", fill="y")
         self.text.pack(side="left", fill="both", expand=True)
+        self.text.bind("<Configure>", lambda e: self._place_ribbon())
+        # un texte non modifiable ne prend pas le focus seul : sans lui, la sélection resterait grise
+        self.text.bind("<Button-1>", lambda e: self.text.focus_set(), add="+")
+        self.text.bind("<ButtonRelease-1>", lambda e: self._selection_changed(), add="+")
+        self.text.bind("<KeyRelease>", lambda e: self._selection_changed(), add="+")
+        self.text.bind("<Button-3>", self._context_menu)
+
+        # marque-page : ruban orange dans la marge gauche, face à l'endroit où l'on s'est arrêté
+        self.ribbon = tk.Canvas(self.text, width=16, height=24, bg=PAPER, highlightthickness=0,
+                                cursor="hand2")
+        self.ribbon.create_polygon(2, 1, 14, 1, 14, 22, 8, 16, 2, 22, fill=OCHRE, outline=COAL, width=2)
+        self.ribbon.bind("<Button-1>", lambda e: self.goto_bookmark())
+        self.menu = tk.Menu(root, tearoff=0, bg=PAPER, fg=COAL, activebackground=COAL,
+                            activeforeground=CLOUD, font=f["ui"], bd=1, relief="solid")
 
         root.bind("<space>", lambda e: None if isinstance(e.widget, (tk.Entry, ttk.Entry)) else self.toggle_play())
         root.bind("<Left>", lambda e: self.prev_chunk())
@@ -909,6 +953,8 @@ class App:
             self.open_book(path)
 
     def open_book(self, path):
+        if self.book_path:
+            self._set_bookmark()
         self.stop()
         self._save_progress()
         try:
@@ -926,15 +972,27 @@ class App:
         for title, _ in chapters:
             self.chap_list.insert("end", title)
 
-        saved = self.progress.get(self.book_path, [0, 0])
-        ch = min(saved[0], len(chapters) - 1)
-        idx = min(saved[1], max(len(self.narrator.chunks[ch]) - 1, 0))
+        entry = self.progress.get(self.book_path) or {}
+        if isinstance(entry, list):                       # ancien format : juste la position
+            entry = {"pos": entry}
+        self.highlights = {k: v for k, v in entry.get("highlights", {}).items() if isinstance(v, list)}
+        self.bookmark = self._valid_pos(entry.get("bookmark") or entry.get("pos"))
+        ch, idx = self._valid_pos(entry.get("pos")) or (0, 0)
         self.current = (ch, idx)
-        self._show_chapter(ch)
-        self._highlight(ch, idx)
+        self.displayed_chapter = None
+        self._highlight(ch, idx, animate=False)
         self._update_buttons()
-        if saved != [0, 0]:
-            self.status_var.set(f"Reprise au chapitre « {chapters[ch][0]} ».")
+        self._mark_bookmark_chapter()
+        if (ch, idx) != (0, 0):
+            self.status_var.set(f"Reprise au marque-page : « {chapters[ch][0]} ».")
+
+    def _valid_pos(self, pos):
+        """(chapitre, segment) sauvegardé, ramené dans les limites du livre (il a pu changer)."""
+        try:
+            ch = min(max(int(pos[0]), 0), len(self.chapters) - 1)
+            return ch, min(max(int(pos[1]), 0), max(len(self.narrator.chunks[ch]) - 1, 0))
+        except (TypeError, ValueError, IndexError):
+            return None
 
     def _show_selected_chapter(self):
         sel = self.chap_list.curselection()
@@ -955,16 +1013,160 @@ class App:
             t.tag_bind(tag, "<Double-Button-1>", lambda e, c=ch, j=i: self.jump(c, j))
         t.configure(state="disabled")
         t.yview_moveto(0)
+        self._apply_highlights(ch)
+        self._selection_changed()
+        self._place_ribbon()
 
-    def _highlight(self, ch, idx):
+    def _highlight(self, ch, idx, animate=True):
         if self.displayed_chapter != ch:
             self._show_chapter(ch)
+            animate = False                    # nouveau chapitre : on se place directement
         self.text.tag_remove("current", "1.0", "end")
         ranges = self.text.tag_ranges(f"c{idx}")
         if ranges:
             self.text.tag_add("current", ranges[0], ranges[1])
-            self.text.see(ranges[0])
+            self._center(ranges[0], ranges[1], animate)
         self._update_stats(ch, idx)
+
+    # -- défilement : le passage lu reste au milieu de la page
+    def _center(self, start, end, animate=True):
+        t = self.text
+        total = _count(t, "1.0", "end", "ypixels")
+        view = t.winfo_height()
+        if total <= 0 or view <= 1:
+            t.see(start)
+            return
+        top, bottom = _count(t, "1.0", start, "ypixels"), _count(t, "1.0", end, "ypixels")
+        if bottom - top < view * 0.8:
+            target = (top + bottom) / 2 - view / 2
+        else:                                  # passage plus haut que la page : on montre son début
+            target = top - view * 0.1
+        target = min(max(target, 0), max(total - view, 0)) / total
+        if self._scroll_job:
+            self.root.after_cancel(self._scroll_job)
+            self._scroll_job = None
+        if not animate:
+            t.yview_moveto(target)
+            return
+        origin, steps = t.yview()[0], 10
+
+        def step(k=1):
+            ease = 1 - (1 - k / steps) ** 3        # départ rapide, arrivée en douceur
+            t.yview_moveto(origin + (target - origin) * ease)
+            self._scroll_job = self.root.after(16, step, k + 1) if k < steps else None
+
+        step()
+
+    # -- surlignage personnel, mémorisé par livre et par chapitre
+    def _offset(self, index):
+        return _count(self.text, "1.0", index, "chars")
+
+    def _apply_highlights(self, ch):
+        """Pose les surlignages du chapitre ; les retrouve par leur texte si le découpage a changé."""
+        t = self.text
+        t.tag_remove("marker", "1.0", "end")
+        kept = []
+        for start, end, snippet in self.highlights.get(str(ch), []):
+            a, b = f"1.0+{start}c", f"1.0+{end}c"
+            if t.get(a, b) != snippet:
+                found = t.search(snippet, "1.0", "end", exact=True) if snippet else ""
+                if not found:
+                    continue                   # texte introuvable : surlignage abandonné
+                start = self._offset(found)
+                end = start + len(snippet)
+                a, b = f"1.0+{start}c", f"1.0+{end}c"
+            t.tag_add("marker", a, b)
+            kept.append([start, end, snippet])
+        if kept or str(ch) in self.highlights:
+            self.highlights[str(ch)] = kept
+
+    def _selection_changed(self):
+        has_sel = bool(self.text.tag_ranges("sel"))
+        self.btn_mark.state(["!disabled"] if has_sel and self.chapters else ["disabled"])
+
+    def add_highlight(self):
+        sel = self.text.tag_ranges("sel")
+        if not sel or self.displayed_chapter is None:
+            return
+        start, end = self._offset(sel[0]), self._offset(sel[1])
+        # fusion avec les surlignages qui se touchent ou se chevauchent
+        ranges = [(s, e) for s, e, _ in self.highlights.get(str(self.displayed_chapter), [])]
+        merged = []
+        for s, e in sorted(ranges + [(start, end)]):
+            if merged and s <= merged[-1][1]:
+                merged[-1][1] = max(merged[-1][1], e)
+            else:
+                merged.append([s, e])
+        self.highlights[str(self.displayed_chapter)] = [
+            [s, e, self.text.get(f"1.0+{s}c", f"1.0+{e}c")] for s, e in merged]
+        self.text.tag_remove("sel", "1.0", "end")
+        self._apply_highlights(self.displayed_chapter)
+        self._selection_changed()
+        self._save_progress()
+        self.status_var.set("Passage surligné.")
+
+    def remove_highlight(self, index):
+        pos = self._offset(index)
+        key = str(self.displayed_chapter)
+        self.highlights[key] = [h for h in self.highlights.get(key, []) if not h[0] <= pos < h[1]]
+        self._apply_highlights(self.displayed_chapter)
+        self._save_progress()
+        self.status_var.set("Surlignage retiré.")
+
+    def _context_menu(self, event):
+        if not self.chapters:
+            return
+        index = self.text.index(f"@{event.x},{event.y}")
+        m = self.menu
+        m.delete(0, "end")
+        m.add_command(label="Surligner la sélection", command=self.add_highlight,
+                      state="normal" if self.text.tag_ranges("sel") else "disabled")
+        m.add_command(label="Retirer ce surlignage", command=lambda: self.remove_highlight(index),
+                      state="normal" if "marker" in self.text.tag_names(index) else "disabled")
+        m.add_separator()
+        chunk = next((int(n[1:]) for n in self.text.tag_names(index) if re.fullmatch(r"c\d+", n)), None)
+        m.add_command(label="Lire à partir d'ici", state="disabled" if chunk is None or not self._ready()
+                      else "normal", command=lambda: self.jump(self.displayed_chapter, chunk))
+        m.add_command(label="Placer le marque-page ici", state="disabled" if chunk is None else "normal",
+                      command=lambda: self._set_bookmark((self.displayed_chapter, chunk)))
+        m.tk_popup(event.x_root, event.y_root)
+
+    # -- marque-page : là où l'on s'est arrêté (pause, fermeture, changement de livre)
+    def _set_bookmark(self, pos=None):
+        if not self.chapters:
+            return
+        self.bookmark = tuple(pos or self.current)
+        self._place_ribbon()
+        self._mark_bookmark_chapter()
+        self._save_progress()
+
+    def goto_bookmark(self):
+        if not self.bookmark:
+            return
+        if self.playing:
+            self.jump(*self.bookmark)
+        else:
+            self.current = self.bookmark
+            self._highlight(*self.bookmark)
+
+    def _place_ribbon(self):
+        bm = self.bookmark
+        info = None
+        if bm and bm[0] == self.displayed_chapter:
+            ranges = self.text.tag_ranges(f"c{bm[1]}")
+            info = self.text.dlineinfo(ranges[0]) if ranges else None
+        if info:
+            # « outside » : coordonnées depuis le bord du widget, marges internes (padx/pady) comprises
+            self.ribbon.place(x=12, y=info[1] + max((info[3] - 24) // 2, 0), bordermode="outside")
+        else:
+            self.ribbon.place_forget()
+
+    def _mark_bookmark_chapter(self):
+        """Le chapitre du marque-page apparaît en orange dans la liste."""
+        self.btn_bookmark.state(["!disabled"] if self.bookmark else ["disabled"])
+        for i in range(self.chap_list.size()):
+            mine = bool(self.bookmark) and i == self.bookmark[0]
+            self.chap_list.itemconfigure(i, foreground=OCHRE if mine else COAL)
 
     # -- lecture
     def _ready(self):
@@ -979,7 +1181,9 @@ class App:
             self.paused = not self.paused
             self.narrator.set_paused(self.paused)
             self.btn_play.configure(text="▶" if self.paused else "⏸")
-            self.status_var.set("En pause" if self.paused else "Lecture")
+            self.status_var.set("En pause — marque-page posé" if self.paused else "Lecture")
+            if self.paused:
+                self._set_bookmark()
 
     def jump(self, ch, idx):
         if not self._ready():
@@ -1107,6 +1311,7 @@ class App:
                     if self.playing and not self.paused and not self.status_var.get().startswith("Chargement"):
                         self.status_var.set("Génération de la suite…")
                 elif kind == "finished":
+                    self._set_bookmark()
                     self.stop()
                     self.status_var.set("Fin du livre.")
                 elif kind == "error":
@@ -1115,7 +1320,7 @@ class App:
                     messagebox.showerror("VoixLivre", data)
         except queue.Empty:
             pass
-        self.root.after(100, self._poll)
+        self._poll_job = self.root.after(100, self._poll)
 
     # -- progression
     def _load_progress(self):
@@ -1126,7 +1331,11 @@ class App:
 
     def _save_progress(self):
         if self.book_path:
-            self.progress[self.book_path] = list(self.current)
+            self.progress[self.book_path] = {
+                "pos": list(self.current),
+                "bookmark": list(self.bookmark) if self.bookmark else None,
+                "highlights": {k: v for k, v in self.highlights.items() if v},
+            }
         # réglages tels qu'affichés (le style reste mémorisé même s'il est inactif pour une voix clonée)
         self.progress["_voice"] = {"speaker": self.speaker_var.get(), "language": self.lang_var.get(),
                                    "instruct": self.instruct_var.get()}
@@ -1136,9 +1345,14 @@ class App:
             pass
 
     def on_close(self):
+        for job in (self._poll_job, self._scroll_job, getattr(self, "_voice_job", None)):
+            if job:
+                self.root.after_cancel(job)
         if getattr(self, "_voice_job", None):
             self._apply_voice()
         self.narrator.stop()
+        if self.book_path:
+            self._set_bookmark()
         self._save_progress()
         self.root.destroy()
 
