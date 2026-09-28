@@ -728,9 +728,26 @@ class Narrator:
 # ---------------------------------------------------------------- interface
 
 # Identité visuelle de MontLivre (https://simon256px.github.io/MontLivre/)
-COAL, ASH, CLOUD, PAPER = "#000000", "#a0a0a0", "#e1e1e1", "#f2f0ea"
-YOLK, OCHRE, MUTED, INK = "#ffa51e", "#ff5500", "#5c5c5c", "#16130f"
-VIOLET, MARKER = "#7d00ff", "#dcc4ff"          # surlignage personnel : violet MontLivre (#7d00ff) éclairci, distinct du jaune de lecture
+YOLK, OCHRE, VIOLET = "#ffa51e", "#ff5500", "#7d00ff"      # accents, identiques de jour et de nuit
+ON_ACCENT = "#010101"       # texte posé sur l'orange ou le jaune : toujours noir (valeur distincte de COAL)
+# Couleurs de base selon le mode. COAL = encre et bordures, CLOUD = fond de la fenêtre,
+# PAPER = page du livre, MARKER = surlignage personnel (violet MontLivre éclairci ou assombri).
+THEMES = {
+    "jour": {"COAL": "#000000", "ASH": "#a0a0a0", "CLOUD": "#e1e1e1", "PAPER": "#f2f0ea",
+             "MUTED": "#5c5c5c", "INK": "#16130f", "MARKER": "#dcc4ff"},
+    "nuit": {"COAL": "#e8e6e1", "ASH": "#5e5e5e", "CLOUD": "#141414", "PAPER": "#1d1c19",
+             "MUTED": "#a3a3a3", "INK": "#e6e1d6", "MARKER": "#4a2d78"},
+}
+THEME = "jour"
+COAL, ASH, CLOUD, PAPER, MUTED, INK, MARKER = (THEMES["jour"][k] for k in
+                                               ("COAL", "ASH", "CLOUD", "PAPER", "MUTED", "INK", "MARKER"))
+
+
+def set_theme(name):
+    """Change les couleurs de base ; les widgets créés ensuite prennent automatiquement les nouvelles."""
+    global THEME
+    THEME = name if name in THEMES else "jour"
+    globals().update(THEMES[THEME])
 ASSETS = Path(__file__).resolve().parent / "assets"
 
 
@@ -773,11 +790,12 @@ def _track(text):
 class FlatButton(tk.Frame):
     """Bouton plat façon MontLivre : bordure noire de 2 px, pas d'arrondi, survol inversé."""
 
-    COLORS = {  # type : (fond, texte, fond survolé, texte survolé)
-        "solid": (COAL, CLOUD, OCHRE, COAL),
-        "ghost": (CLOUD, COAL, COAL, CLOUD),
-        "accent": (OCHRE, COAL, COAL, OCHRE),
-    }
+    @staticmethod
+    def colors(kind):
+        """(fond, texte, fond survolé, texte survolé), lus au moment de peindre : suivent le mode jour/nuit."""
+        return {"solid": (COAL, CLOUD, OCHRE, ON_ACCENT),
+                "ghost": (CLOUD, COAL, COAL, CLOUD),
+                "accent": (OCHRE, ON_ACCENT, COAL, OCHRE)}[kind]
 
     def __init__(self, parent, text, command, kind="solid", font=None, width=None, padx=16, pady=7):
         super().__init__(parent, bg=COAL, padx=2, pady=2)
@@ -795,7 +813,7 @@ class FlatButton(tk.Frame):
         self._paint()
 
     def _paint(self):
-        bg, fg, hbg, hfg = self.COLORS[self.kind]
+        bg, fg, hbg, hfg = self.colors(self.kind)
         if self.disabled:
             self.configure(bg=ASH)
             self.label.configure(bg=CLOUD, fg=ASH, cursor="arrow")
@@ -838,11 +856,13 @@ class App:
         self.highlights = {}              # "chapitre" -> [[début, fin, texte], …] en caractères
         self._scroll_job = None
         self.progress = self._load_progress()
+        set_theme(self.progress.get("_theme", "jour"))      # mode jour/nuit mémorisé
 
         root.title("VoixLivre")
         root.geometry("1180x800")
         root.minsize(900, 620)
         self._build_ui()
+        root.after(50, self._dark_titlebar)
         root.protocol("WM_DELETE_WINDOW", self.on_close)
         self._poll_job = root.after(100, self._poll)
 
@@ -851,6 +871,29 @@ class App:
             root.after(200, lambda: self.open_book(initial))
         else:
             root.after(200, self.show_library)          # au démarrage : la bibliothèque
+
+    def _apply_ttk_styles(self):
+        """Styles ttk (listes déroulantes, ascenseurs) aux couleurs du mode jour ou nuit."""
+        root, f = self.root, self.fonts
+        style = ttk.Style()
+        style.theme_use("clam")
+        style.configure("TCombobox", fieldbackground=PAPER, background=CLOUD, foreground=COAL,
+                        arrowcolor=COAL, bordercolor=COAL, lightcolor=PAPER, darkcolor=PAPER,
+                        padding=5, arrowsize=13)
+        style.map("TCombobox",
+                  fieldbackground=[("disabled", CLOUD), ("readonly", PAPER)],
+                  foreground=[("disabled", ASH)], bordercolor=[("disabled", ASH)],
+                  arrowcolor=[("disabled", ASH)], background=[("active", YOLK)],
+                  selectbackground=[("readonly", PAPER), ("!readonly", YOLK)],
+                  selectforeground=[("readonly", COAL), ("!readonly", ON_ACCENT)])
+        style.configure("Vertical.TScrollbar", background=CLOUD, troughcolor=PAPER, bordercolor=PAPER,
+                        lightcolor=CLOUD, darkcolor=CLOUD, arrowcolor=COAL, gripcount=0)
+        style.map("Vertical.TScrollbar", background=[("active", YOLK)])
+        root.option_add("*TCombobox*Listbox.background", PAPER)
+        root.option_add("*TCombobox*Listbox.foreground", COAL)
+        root.option_add("*TCombobox*Listbox.selectBackground", COAL)
+        root.option_add("*TCombobox*Listbox.selectForeground", CLOUD)
+        root.option_add("*TCombobox*Listbox.font", f["ui"])
 
     # -- construction
     def _build_ui(self):
@@ -864,25 +907,7 @@ class App:
         except tk.TclError:
             self._icons = None
 
-        style = ttk.Style()
-        style.theme_use("clam")
-        style.configure("TCombobox", fieldbackground=PAPER, background=CLOUD, foreground=COAL,
-                        arrowcolor=COAL, bordercolor=COAL, lightcolor=PAPER, darkcolor=PAPER,
-                        padding=5, arrowsize=13)
-        style.map("TCombobox",
-                  fieldbackground=[("disabled", CLOUD), ("readonly", PAPER)],
-                  foreground=[("disabled", ASH)], bordercolor=[("disabled", ASH)],
-                  arrowcolor=[("disabled", ASH)], background=[("active", YOLK)],
-                  selectbackground=[("readonly", PAPER), ("!readonly", YOLK)],
-                  selectforeground=[("readonly", COAL), ("!readonly", COAL)])
-        style.configure("Vertical.TScrollbar", background=CLOUD, troughcolor=PAPER, bordercolor=PAPER,
-                        lightcolor=CLOUD, darkcolor=CLOUD, arrowcolor=COAL, gripcount=0)
-        style.map("Vertical.TScrollbar", background=[("active", YOLK)])
-        root.option_add("*TCombobox*Listbox.background", PAPER)
-        root.option_add("*TCombobox*Listbox.foreground", COAL)
-        root.option_add("*TCombobox*Listbox.selectBackground", COAL)
-        root.option_add("*TCombobox*Listbox.selectForeground", CLOUD)
-        root.option_add("*TCombobox*Listbox.font", f["ui"])
+        self._apply_ttk_styles()
         small = lambda parent, text, **kw: tk.Label(parent, text=_track(text), font=f["small"],
                                                      bg=kw.pop("bg", CLOUD), fg=kw.pop("fg", MUTED), **kw)
 
@@ -894,6 +919,10 @@ class App:
         if self._icons:
             tk.Label(brand, image=self._icons[1], bg=CLOUD).pack(side="left", padx=(0, 10))
         small(brand, "VoixLivre — lecture à voix haute").pack(side="left")
+        # bascule jour / nuit : l'icône montre le mode vers lequel on passe
+        self.btn_theme = FlatButton(brand, "☾" if THEME == "jour" else "☀", self.toggle_theme, "ghost",
+                                    f["symbol"], width=2, pady=2)
+        self.btn_theme.pack(side="right", padx=(10, 0))
         FlatButton(brand, _track("Ajouter une voix"), self.add_voice, "ghost", f["button"]).pack(side="right")
         self.btn_library = FlatButton(brand, _track("Bibliothèque"), self.toggle_library, "ghost", f["button"])
         self.btn_library.pack(side="left", padx=(24, 0))
@@ -919,9 +948,9 @@ class App:
             cell = tk.Frame(band, bg=OCHRE, padx=16, pady=8)
             cell.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 2, 0))
             band.columnconfigure(col, weight=1, uniform="stats")
-            small(cell, label, bg=OCHRE, fg=COAL).pack(anchor="w")
+            small(cell, label, bg=OCHRE, fg=ON_ACCENT).pack(anchor="w")
             self.stat_vars[key] = tk.StringVar(value="—")
-            tk.Label(cell, textvariable=self.stat_vars[key], font=f["big"], bg=OCHRE, fg=COAL,
+            tk.Label(cell, textvariable=self.stat_vars[key], font=f["big"], bg=OCHRE, fg=ON_ACCENT,
                      anchor="w").pack(anchor="w")
 
         controls = tk.Frame(foot, bg=CLOUD)
@@ -945,8 +974,9 @@ class App:
         self.speaker_box.pack(side="left")
         field("Langue")
         self.lang_var = tk.StringVar(value=self.progress.get("_voice", {}).get("language", LANGUAGES[0]))
-        ttk.Combobox(controls, textvariable=self.lang_var, values=LANGUAGES, width=10,
-                     state="readonly", font=f["ui"]).pack(side="left")
+        self.lang_box = ttk.Combobox(controls, textvariable=self.lang_var, values=LANGUAGES, width=10,
+                                     state="readonly", font=f["ui"])
+        self.lang_box.pack(side="left")
         field("Style")
         # les voix clonées ne suivent pas de consigne de style : on le signale à côté du champ
         self.style_note = tk.Label(controls, font=f["small"], bg=CLOUD, fg=OCHRE)
@@ -1009,7 +1039,7 @@ class App:
                             state="disabled")
         # fond violet clair + soulignement violet : reste visible même sous le jaune du passage lu
         self.text.tag_configure("marker", background=MARKER, underline=True, underlinefg=VIOLET)
-        self.text.tag_configure("current", background=YOLK)
+        self.text.tag_configure("current", background=YOLK, foreground=ON_ACCENT)
         self.text.tag_raise("current", "marker")        # le passage lu reste visible sur un surlignage
         self.text.tag_raise("sel")
         scroll.pack(side="right", fill="y")
@@ -1224,10 +1254,10 @@ class App:
             cover = tk.Frame(inner, bg=OCHRE, width=COVER_SIZE[0], height=COVER_SIZE[1],
                              highlightthickness=1, highlightbackground=COAL)
             cover.pack_propagate(False)
-            tk.Label(cover, text=entry["title"].upper()[:60], font=(f["big"][0], 11), bg=OCHRE, fg=COAL,
+            tk.Label(cover, text=entry["title"].upper()[:60], font=(f["big"][0], 11), bg=OCHRE, fg=ON_ACCENT,
                      wraplength=COVER_SIZE[0] - 16, justify="left", anchor="nw").pack(fill="both", padx=8, pady=8)
             tk.Label(cover, text=_track(Path(path).suffix.lstrip(".")), font=f["small"], bg=OCHRE,
-                     fg=COAL).pack(side="bottom", anchor="w", padx=8, pady=8)
+                     fg=ON_ACCENT).pack(side="bottom", anchor="w", padx=8, pady=8)
         cover.pack()
 
         width = COVER_SIZE[0]
@@ -1296,6 +1326,80 @@ class App:
         chunks = self.narrator.chunks
         done = sum(len(c) for c in chunks[:ch]) + idx
         return 100 * done // max(sum(len(c) for c in chunks), 1)
+
+    # -- mode jour / nuit
+    _COLOR_OPTIONS = ("background", "foreground", "highlightbackground", "highlightcolor",
+                      "selectbackground", "selectforeground", "inactiveselectbackground",
+                      "activebackground", "activeforeground", "disabledforeground", "insertbackground")
+
+    def toggle_theme(self):
+        old = THEMES[THEME]
+        set_theme("nuit" if THEME == "jour" else "jour")
+        mapping = {old[k].lower(): THEMES[THEME][k] for k in old}
+        self._recolor(self.root, mapping)
+        self._apply_ttk_styles()
+        for box in (self.speaker_box, self.lang_box, self.style_box):   # listes déjà déroulées une fois
+            try:
+                listbox = f"{self.root.tk.call('ttk::combobox::PopdownWindow', box)}.f.l"
+                self.root.tk.call(listbox, "configure", "-background", PAPER, "-foreground", COAL,
+                                  "-selectbackground", COAL, "-selectforeground", CLOUD)
+            except tk.TclError:
+                pass
+        self.text.tag_configure("marker", background=MARKER)
+        self.btn_theme.configure(text="☾" if THEME == "jour" else "☀")
+        self._repaint_buttons(self.root)
+        self._mark_bookmark_chapter()
+        self._library_cols = 0                    # cartes de la bibliothèque recréées aux bonnes couleurs
+        self._layout_library()
+        self._dark_titlebar()
+        self.progress["_theme"] = THEME
+        self._save_progress()
+        self.status_var.set("Mode nuit." if THEME == "nuit" else "Mode jour.")
+
+    def _recolor(self, widget, mapping):
+        """Remplace, dans tout l'arbre de widgets, chaque couleur de l'ancien mode par celle du nouveau."""
+        for option in self._COLOR_OPTIONS:
+            try:
+                value = str(widget.cget(option))
+            except (tk.TclError, ValueError):
+                continue
+            if value.lower() in mapping:
+                try:
+                    widget.configure({option: mapping[value.lower()]})
+                except tk.TclError:
+                    pass
+        if isinstance(widget, tk.Canvas):
+            for item in widget.find_all():
+                for option in ("fill", "outline"):
+                    try:
+                        value = str(widget.itemcget(item, option))
+                    except tk.TclError:
+                        continue
+                    if value.lower() in mapping:
+                        widget.itemconfigure(item, {option: mapping[value.lower()]})
+        for child in widget.winfo_children():
+            self._recolor(child, mapping)
+
+    def _repaint_buttons(self, widget):
+        if isinstance(widget, FlatButton):
+            widget._paint()
+        for child in widget.winfo_children():
+            self._repaint_buttons(child)
+
+    def _dark_titlebar(self):
+        """Barre de titre Windows sombre en mode nuit (Windows 10 20H1 et plus récent)."""
+        if sys.platform != "win32":
+            return
+        try:
+            import ctypes
+
+            hwnd = ctypes.windll.user32.GetParent(self.root.winfo_id())
+            value = ctypes.c_int(1 if THEME == "nuit" else 0)
+            ctypes.windll.dwmapi.DwmSetWindowAttribute(hwnd, 20, ctypes.byref(value), ctypes.sizeof(value))
+            # oblige Windows à redessiner le cadre tout de suite
+            ctypes.windll.user32.SetWindowPos(hwnd, 0, 0, 0, 0, 0, 0x0027)    # NOMOVE|NOSIZE|NOZORDER|FRAMECHANGED
+        except Exception:  # noqa: BLE001 — simple confort visuel
+            pass
 
     def _update_stats(self, ch, idx):
         """Bandeau orange et barre de la page : chapitre, progression, voix."""
