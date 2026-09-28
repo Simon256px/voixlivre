@@ -14,6 +14,8 @@ polices Archivo et Literata, noir, gris nuage, papier et orange.
 - **Bibliothèque** au démarrage : couverture, titre, auteur, progression et date de dernière lecture
   de chaque livre, rouvert en un clic à son marque-page
 - **Mode jour / nuit** (bouton ☾ / ☀), mémorisé
+- **Images et notes de l'ebook** affichées à leur place (jamais lues) : appel de note cliquable en
+  orange, qui ouvre la note ; liste des notes en fin de chapitre
 - **Passage lu toujours au milieu** de la page, **surlignage** personnel par livre et **marque-page**
   posé automatiquement là où l'on s'arrête
 

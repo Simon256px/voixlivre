@@ -62,19 +62,41 @@ _OPEN_END = re.compile(r"[’'(\[«,-]$|\b(?:de|du|des|la|le|les|l|d|un|une|et|�
 _JUNK_LINE = re.compile(r"^(?:\d{1,4}\W*|[\W_]+)$")             # n° de page, « * * * », ponctuation seule
 
 
+# Repères insérés dans le texte : affichés (appel de note, image) mais jamais lus à voix haute.
+NOTE_OPEN, NOTE_CLOSE, IMAGE_OPEN, IMAGE_CLOSE = "\ue001", "\ue002", "\ue003", "\ue004"
+_MEDIA = re.compile("\ue001(\\d+)\ue002|\ue003(\\d+)\ue004")
+_MEDIA_LINE = re.compile("^(?:\ue003\\d+\ue004)+$")
+
+
+def speakable(text):
+    """Texte à lire : sans les appels de note ni les images."""
+    return re.sub(r"\s{2,}", " ", _MEDIA.sub("", text)).strip()
+
+
+class Book(list):
+    """Chapitres [(titre, texte)], plus les notes {n: (appel, texte)} et les images {n: octets} du livre."""
+
+    def __init__(self, chapters=(), notes=None, images=None):
+        super().__init__(chapters)
+        self.notes = notes or {}
+        self.images = images or {}
+
+
 def tidy_text(text):
     """Remet le texte en paragraphes propres et complets pour une lecture fluide.
 
     Recolle les lignes coupées au milieu d'une phrase, supprime les numéros de page
-    et séparateurs isolés, normalise espaces et ponctuation.
+    et séparateurs isolés, normalise espaces et ponctuation. Les lignes d'images restent à part.
     """
     paragraphs = []
     for line in _clean(text).split("\n"):
         line = re.sub(r"^[•·▪◦■□►➢✓*]\s*", "", line.strip())      # puces de liste
         if not line or _JUNK_LINE.match(line):
             continue
-        if paragraphs and (_CLOSING_START.match(line) or _OPEN_END.search(paragraphs[-1])
-                           or (_LOWER_START.match(line) and not _SENTENCE_END.search(paragraphs[-1]))):
+        image = _MEDIA_LINE.match(line)
+        if paragraphs and not image and not _MEDIA_LINE.match(paragraphs[-1]) and (
+                _CLOSING_START.match(line) or _OPEN_END.search(paragraphs[-1])
+                or (_LOWER_START.match(line) and not _SENTENCE_END.search(paragraphs[-1]))):
             sep = "" if re.match(r"^[,.;:!?)\]»…%]", line) or paragraphs[-1].endswith(("’", "'", "(", "[")) else " "
             paragraphs[-1] += sep + line
         else:
@@ -86,6 +108,7 @@ def tidy_text(text):
         p = re.sub(r"([(\[])\s+", r"\1", p)
         p = re.sub(r"«\s*", "« ", p)
         p = re.sub(r"\s*»", " »", p)
+        p = re.sub("\\s+(\ue001)", r"\1", p)                      # appel de note collé au mot
         p = re.sub(r"\s{2,}", " ", p).strip()
         if p:
             out.append(p)
@@ -93,7 +116,7 @@ def tidy_text(text):
 
 
 _BLOCK_TAGS = ["p", "div", "section", "article", "header", "footer", "blockquote", "li", "ul", "ol",
-               "dd", "dt", "dl", "pre", "tr", "table", "h1", "h2", "h3", "h4", "h5", "h6", "hr"]
+               "dd", "dt", "dl", "pre", "tr", "table", "h1", "h2", "h3", "h4", "h5", "h6", "hr", "figure"]
 _NOTE_CLASS = re.compile(r"^(?:defnotes?|notes?|footnotes?|endnotes?|rearnotes?|ntb|nt|apnb|noteref|"
                          r"note[-_]?\w*|\w*[-_]notes?)$", re.I)
 _NOTE_TYPE = re.compile(r"note|annotation", re.I)
@@ -120,7 +143,17 @@ def _epub_toc_titles(book):
     return titles
 
 
-def _epub_html_to_text(html):
+def _is_note_ref(tag):
+    """Appel de note : lien (ou exposant) court vers une ancre, ou marqué comme tel par l'EPUB."""
+    kind = " ".join(str(tag.get(a, "")) for a in ("epub:type", "role"))
+    if re.search(r"noteref", kind, re.I):
+        return True
+    return tag.name == "a" and "#" in str(tag.get("href", "")) and bool(_NOTE_MARK.match(speakable(tag.get_text())))
+
+
+def _epub_html_to_text(html, note_for=lambda href: None, image_for=lambda src: None):
+    """Texte d'une page EPUB. `note_for(href)` et `image_for(src)` renvoient le numéro d'une note ou
+    d'une image du livre (ou None) : elles sont alors remplacées par un repère affiché mais non lu."""
     from bs4 import BeautifulSoup, NavigableString, Comment
 
     soup = BeautifulSoup(html, "html.parser")
@@ -131,21 +164,38 @@ def _epub_html_to_text(html):
             node.extract()
         elif isinstance(node, NavigableString) and not node.find_parent("pre"):
             node.replace_with(re.sub(r"\s+", " ", str(node)))
-    for tag in root(["script", "style", "aside", "img", "svg", "figure", "nav", "rt", "rp"]):
+    for tag in root(["script", "style", "nav", "rt", "rp", "figcaption"]):
         tag.decompose()
-    # notes de bas de page et appels de note : on ne les lit pas
+    # images : un repère sur sa propre ligne, à leur place dans le texte
+    for tag in list(root.find_all(["img", "svg"])):
+        if tag.decomposed:
+            continue
+        if tag.name == "img":
+            src = tag.get("src", "")
+        else:
+            inner = tag.find("image")
+            src = (inner.get("xlink:href") or inner.get("href") or "") if inner else ""
+        key = image_for(src) if src else None
+        tag.replace_with(f"\n{IMAGE_OPEN}{key}{IMAGE_CLOSE}\n" if key is not None else "")
+    # appels de note : un repère (affiché « ² », non lu) ; corps des notes : retirés du texte lu
     for tag in list(root.find_all(True)):
         if tag.decomposed:
             continue
+        if _is_note_ref(tag):
+            key = note_for(str(tag.get("href", "")) or str((tag.find("a") or {}).get("href", "")))
+            tag.replace_with(f"{NOTE_OPEN}{key}{NOTE_CLOSE}" if key is not None else "")
+            continue
+        if tag.name == "sup" and tag.find(_is_note_ref):
+            continue                           # le lien qu'il contient est traité juste après
         kind = " ".join(str(tag.get(a, "")) for a in ("epub:type", "role"))
         classes = tag.get("class") or []
-        if _NOTE_TYPE.search(kind) or any(_NOTE_CLASS.match(c) for c in classes):
+        if tag.name == "aside" or _NOTE_TYPE.search(kind) or any(_NOTE_CLASS.match(c) for c in classes):
             tag.decompose()
-        elif tag.name in ("sup", "a") and _NOTE_MARK.match(tag.get_text()):
-            tag.decompose()
+        elif tag.name in ("sup", "a") and _NOTE_MARK.match(speakable(tag.get_text())):
+            tag.decompose()                    # (un lien qui entoure une image n'est pas un appel de note)
     # une pause d'intonation après chaque titre
     for head in root.find_all(["h1", "h2", "h3", "h4", "h5", "h6"]):
-        if not re.search(r"[.!?…:]\W*$", head.get_text().strip()):
+        if not re.search(r"[.!?…:]\W*$", speakable(head.get_text()).strip()):
             head.append(".")
     for br in root.find_all("br"):
         br.replace_with("\n")
@@ -157,23 +207,103 @@ def _epub_html_to_text(html):
 
 
 def load_epub(path):
+    import posixpath
+
+    import ebooklib
+    from bs4 import BeautifulSoup
     from ebooklib import epub, ITEM_DOCUMENT
 
     book = epub.read_epub(str(path), options={"ignore_ncx": False})
     toc = _epub_toc_titles(book)
-    chapters = []
+    docs = []
     for idref, _ in book.spine:
         item = book.get_item_with_id(idref)
-        if item is None or item.get_type() != ITEM_DOCUMENT:
-            continue
-        text = _epub_html_to_text(item.get_content())
-        if len(text) < 40 or (len(text) < 600 and _BOILERPLATE.search(text)):
-            continue
+        if item is not None and item.get_type() == ITEM_DOCUMENT:
+            docs.append(item)
+
+    # 1. toutes les ancres du livre (les notes sont souvent dans un autre fichier que leur appel)
+    anchors = {}
+    for item in book.get_items_of_type(ITEM_DOCUMENT):
+        soup = BeautifulSoup(item.get_content(), "html.parser")
+        for el in soup.find_all(id=True):
+            anchors[(posixpath.basename(item.get_name()), el["id"])] = el
+    notes, note_keys = {}, {}
+
+    def note_for_doc(doc_name):
+        def note_for(href, label=""):
+            file, _, anchor = href.partition("#")
+            target = (posixpath.basename(file) or posixpath.basename(doc_name), anchor)
+            if not anchor or target not in anchors:
+                return None
+            if target not in note_keys:
+                el = anchors[target]
+                # le texte de la note : le bloc qui contient l'ancre, sans le numéro de renvoi
+                block = el if el.name in ("p", "li", "div", "aside", "section", "dd") else \
+                    el.find_parent(["p", "li", "div", "aside", "section", "dd"]) or el
+                body = re.sub(r"\s+", " ", block.get_text(" ")).strip()
+                if label:                      # retire le numéro de renvoi (« 2 . », « [2] »…) en tête
+                    body = re.sub(r"^\W{0,3}" + re.escape(label) + r"\s*[.)\]:]?\s*", "", body, count=1) or body
+                if not body:
+                    return None
+                note_keys[target] = len(notes) + 1
+                notes[note_keys[target]] = [None, body]
+            return note_keys[target]
+        return note_for
+
+    # 2. images du livre, retrouvées par leur chemin (relatif à la page) ou leur nom de fichier
+    image_items = list(book.get_items_of_type(ebooklib.ITEM_IMAGE)) + \
+        list(book.get_items_of_type(ebooklib.ITEM_COVER))
+    by_path = {item.get_name(): item for item in image_items}
+    by_name = {posixpath.basename(item.get_name()): item for item in image_items}
+    images, image_keys = {}, {}
+
+    def image_for_doc(doc_name):
+        def image_for(src):
+            src = src.split("#")[0].split("?")[0]
+            full = posixpath.normpath(posixpath.join(posixpath.dirname(doc_name), src))
+            item = by_path.get(full) or by_path.get(src) or by_name.get(posixpath.basename(src))
+            if item is None:
+                return None
+            if item.get_name() not in image_keys:
+                image_keys[item.get_name()] = len(images) + 1
+                images[image_keys[item.get_name()]] = item.get_content()
+            return image_keys[item.get_name()]
+        return image_for
+
+    chapters, pending = [], ""               # pending : images d'une page sans texte (couverture…)
+    for item in docs:
         name = item.get_name()
+        # numéro affiché de chaque appel de note, tel qu'il apparaît dans le livre
+        soup = BeautifulSoup(item.get_content(), "html.parser")
+        labels = {}
+        for tag in soup.find_all(True):
+            if _is_note_ref(tag):
+                href = str(tag.get("href", "")) or str((tag.find("a") or {}).get("href", ""))
+                labels.setdefault(href, re.sub(r"[\s\[\]()]", "", tag.get_text()) or "*")
+        note_for = note_for_doc(name)
+
+        def note_with_label(href, note_for=note_for, labels=labels):
+            key = note_for(href, labels.get(href, ""))
+            if key is not None and notes[key][0] is None:
+                notes[key][0] = labels.get(href, str(key))
+            return key
+
+        text = _epub_html_to_text(item.get_content(), note_with_label, image_for_doc(name))
+        spoken = speakable(text)
+        if len(spoken) < 40 or (len(spoken) < 600 and _BOILERPLATE.search(spoken)):
+            # page sans vrai texte : on garde ses images pour les montrer avec le chapitre voisin
+            pending += "".join(f"{IMAGE_OPEN}{m.group(2)}{IMAGE_CLOSE}" for m in _MEDIA.finditer(text)
+                               if m.group(2))
+            continue
+        if pending:
+            text, pending = pending + "\n" + text, ""
         title = toc.get(name) or next((t for h, t in toc.items() if name.endswith(h) or h.endswith(name)), None)
-        title = _clean(title or text.split("\n", 1)[0]).rstrip(".")
+        first = next((speakable(line) for line in text.split("\n") if speakable(line)), "")
+        title = _clean(title or first).rstrip(".")
         chapters.append((title[:70] or f"Section {len(chapters) + 1}", text))
-    return chapters
+    if pending and chapters:
+        chapters[-1] = (chapters[-1][0], chapters[-1][1] + "\n" + pending)
+    return Book(chapters, {k: (label or str(k), body) for k, (label, body) in notes.items()}, images)
 
 
 def load_txt(path):
@@ -223,7 +353,7 @@ def load_book(path):
     chapters = loader(path)
     if not chapters:
         raise ValueError("Aucun texte lisible trouvé dans ce fichier.")
-    return chapters
+    return chapters if isinstance(chapters, Book) else Book(chapters)
 
 
 _ABBREV_END = re.compile(r"(?:^|[\s(’'])(?:[A-ZÀ-Ý]|\d{1,4}|[IVXLC]{1,5}|M|MM|Mme|Mlle|Mgr|Dr|Pr|St|Ste|"
@@ -356,12 +486,21 @@ def save_cover(path, data):
 
 
 def split_chunks(text):
-    """Découpe un chapitre en segments [(texte, fin_de_paragraphe)]."""
-    chunks = []
+    """Découpe un chapitre en segments [(texte, fin_de_paragraphe)].
+
+    Les segments gardent leurs repères d'images et d'appels de note (affichés, pas lus) ; une ligne
+    qui ne contient qu'une image est accrochée au début du segment suivant, jamais seule.
+    """
+    chunks, pending = [], ""
     for para in text.split("\n"):
         para = para.strip()
         if not para:
             continue
+        if not speakable(para):                # image(s) seule(s) : rien à lire
+            pending += para
+            continue
+        if pending:
+            para, pending = pending + para, ""
         # découpe en phrases, puis recolle les fausses fins de phrase (« M. », « p. 12 », « 1. »…)
         sentences = []
         for s in re.split(r"(?<=[.!?…])\s+", para):
@@ -388,6 +527,8 @@ def split_chunks(text):
                 current = f"{current} {piece}".strip()
         if current:
             chunks.append((current, True))
+    if pending and chunks:                     # images en fin de chapitre : après le dernier segment
+        chunks[-1] = (chunks[-1][0] + pending, chunks[-1][1])
     return chunks
 
 
@@ -663,7 +804,7 @@ class Narrator:
                     self.cond.wait()
                 epoch = self.running_epoch = self.gen_epoch
                 voice = dict(self.voice)
-                texts = [self.chunks[c][i][0] for c, i in todo]
+                texts = [speakable(self.chunks[c][i][0]) for c, i in todo]   # sans notes ni images
             try:
                 wavs, sr = self._synthesize_checked(texts, voice)
             except _Aborted:
@@ -1040,6 +1181,19 @@ class App:
         # fond violet clair + soulignement violet : reste visible même sous le jaune du passage lu
         self.text.tag_configure("marker", background=MARKER, underline=True, underlinefg=VIOLET)
         self.text.tag_configure("current", background=YOLK, foreground=ON_ACCENT)
+        # appels de note (exposant orange, cliquable), images centrées, notes en fin de chapitre
+        self.text.tag_configure("noteref", foreground=OCHRE, offset=6, font=(f["button"][0], 8, "bold"))
+        self.text.tag_configure("imageline", justify="center", spacing1=14, spacing3=14)
+        self.text.tag_configure("notes_head", font=f["small"], foreground=MUTED, spacing1=28, spacing3=10)
+        self.text.tag_configure("notes", font=(f["text"][0], 10), foreground=MUTED, spacing1=3, spacing3=3,
+                                lmargin1=0, lmargin2=18)
+        self.text.tag_configure("notes_label", foreground=OCHRE)
+        self.text.tag_bind("noteref", "<Button-1>", self.show_note)
+        self.text.tag_bind("noteref", "<Enter>", lambda e: self.text.configure(cursor="hand2"))
+        self.text.tag_bind("noteref", "<Leave>", lambda e: self.text.configure(cursor="xterm"))
+        self.text.tag_raise("noteref", "current")
+        self.book_notes, self.book_images, self._chapter_images, self.note_popup = {}, {}, [], None
+        root.bind("<Button-1>", self.close_note, add="+")        # un clic ailleurs ferme la note
         self.text.tag_raise("current", "marker")        # le passage lu reste visible sur un surlignage
         self.text.tag_raise("sel")
         scroll.pack(side="right", fill="y")
@@ -1346,6 +1500,9 @@ class App:
             except tk.TclError:
                 pass
         self.text.tag_configure("marker", background=MARKER)
+        self.text.tag_configure("notes_head", foreground=MUTED)
+        self.text.tag_configure("notes", foreground=MUTED)
+        self.close_note()
         self.btn_theme.configure(text="☾" if THEME == "jour" else "☀")
         self._repaint_buttons(self.root)
         self._mark_bookmark_chapter()
@@ -1441,6 +1598,9 @@ class App:
             return False
         self.book_path = str(Path(path).resolve())
         self.chapters = chapters
+        self.book_notes = getattr(chapters, "notes", {})
+        self.book_images = getattr(chapters, "images", {})
+        self.close_note()
         self.narrator.load([split_chunks(text) for _, text in chapters])
         entry = self._library_add(self.book_path, opened=True, save=False)
         title = entry["title"]
@@ -1481,6 +1641,7 @@ class App:
             self._show_chapter(sel[0])
 
     def _show_chapter(self, ch):
+        self.close_note()
         self.displayed_chapter = ch
         self.chap_list.selection_clear(0, "end")
         self.chap_list.selection_set(ch)
@@ -1488,10 +1649,30 @@ class App:
         t = self.text
         t.configure(state="normal")
         t.delete("1.0", "end")
+        self._chapter_images = []              # garde les images affichées en mémoire (sinon Tk les efface)
+        notes_here = []
         for i, (chunk, end_para) in enumerate(self.narrator.chunks[ch]):
             tag = f"c{i}"
-            t.insert("end", chunk + ("\n\n" if end_para else " "), (tag,))
+            pos = 0
+            for m in _MEDIA.finditer(chunk):   # appels de note et images : affichés, jamais lus
+                if chunk[pos:m.start()]:
+                    t.insert("end", chunk[pos:m.start()], (tag,))
+                if m.group(1):
+                    key = int(m.group(1))
+                    if key in self.book_notes:
+                        t.insert("end", self.book_notes[key][0], (tag, "noteref", f"note{key}"))
+                        notes_here.append(key)
+                else:
+                    self._insert_image(int(m.group(2)), tag)
+                pos = m.end()
+            t.insert("end", chunk[pos:] + ("\n\n" if end_para else " "), (tag,))
             t.tag_bind(tag, "<Double-Button-1>", lambda e, c=ch, j=i: self.jump(c, j))
+        if notes_here:                         # notes du chapitre, en fin de page (non lues)
+            t.insert("end", "\n" + _track("Notes du chapitre") + "\n", ("notes_head",))
+            for key in dict.fromkeys(notes_here):
+                label, body = self.book_notes[key]
+                t.insert("end", f"{label}. ", ("notes", "notes_label", f"notedef{key}"))
+                t.insert("end", body + "\n", ("notes", f"notedef{key}"))
         t.configure(state="disabled")
         t.yview_moveto(0)
         self._apply_highlights(ch)
@@ -1504,10 +1685,87 @@ class App:
             animate = False                    # nouveau chapitre : on se place directement
         self.text.tag_remove("current", "1.0", "end")
         ranges = self.text.tag_ranges(f"c{idx}")
-        if ranges:
-            self.text.tag_add("current", ranges[0], ranges[1])
-            self._center(ranges[0], ranges[1], animate)
+        if ranges:                             # un segment coupé par une image a plusieurs morceaux
+            self.text.tag_add("current", ranges[0], ranges[-1])
+            lines = self.text.tag_ranges("imageline")
+            for a, b in zip(lines[::2], lines[1::2]):  # pas de fond jaune autour des images
+                self.text.tag_remove("current", a, b)
+            self._center(ranges[0], ranges[-1], animate)
         self._update_stats(ch, idx)
+
+    # -- images et notes de l'ebook (affichées, jamais lues)
+    def _insert_image(self, key, tag):
+        data = self.book_images.get(key)
+        if not data:
+            return
+        try:
+            import io
+
+            from PIL import Image, ImageTk
+
+            img = Image.open(io.BytesIO(data))
+            img.load()
+            if img.mode not in ("RGB", "RGBA"):
+                img = img.convert("RGBA")
+            shown = self.text.winfo_width()
+            width = max(shown - 2 * 40 - 40, 200) if shown > 200 else 620   # page pas encore affichée
+            img.thumbnail((min(width, 620), 460), Image.LANCZOS)   # réduite, jamais agrandie
+            photo = ImageTk.PhotoImage(img)
+        except Exception:  # noqa: BLE001 — image illisible : on la saute
+            return
+        t = self.text
+        if t.index("end-1c").split(".")[1] != "0":                  # l'image sur sa propre ligne
+            t.insert("end", "\n", (tag,))
+        start = t.index("end-1c")
+        t.image_create("end", image=photo)
+        t.insert("end", "\n", (tag,))
+        t.tag_add("imageline", start, "end-1c")
+        t.tag_add(tag, start, "end-1c")        # l'image fait partie du segment : centrée avec lui
+        self._chapter_images.append(photo)
+
+    def _note_at(self, index):
+        for name in self.text.tag_names(index):
+            if re.fullmatch(r"note\d+", name):
+                return int(name[4:])
+        return None
+
+    def show_note(self, event):
+        key = self._note_at(self.text.index(f"@{event.x},{event.y}"))
+        if key is None or key not in self.book_notes:
+            return
+        self.close_note()
+        label, body = self.book_notes[key]
+        f = self.fonts
+        pop = self.note_popup = tk.Toplevel(self.root, bg=COAL, padx=2, pady=2)
+        pop.overrideredirect(True)
+        pop.transient(self.root)               # toujours au-dessus de la fenêtre de lecture
+        pop.attributes("-topmost", True)
+        inner = tk.Frame(pop, bg=PAPER, padx=16, pady=12)
+        inner.pack(fill="both", expand=True)
+        head = tk.Frame(inner, bg=PAPER)
+        head.pack(fill="x")
+        tk.Label(head, text=_track(f"Note {label}"), font=f["small"], bg=PAPER, fg=OCHRE).pack(side="left")
+        close = tk.Label(head, text="✕", font=f["ui"], bg=PAPER, fg=MUTED, cursor="hand2")
+        close.pack(side="right")
+        close.bind("<Button-1>", lambda e: self.close_note())
+        tk.Label(inner, text=body, font=(f["text"][0], 11), bg=PAPER, fg=INK, wraplength=440,
+                 justify="left", anchor="w").pack(anchor="w", pady=(8, 0))
+        pop.update_idletasks()
+        # près de l'appel de note, sans sortir de l'écran
+        x = min(event.x_root + 12, pop.winfo_screenwidth() - pop.winfo_reqwidth() - 12)
+        y = event.y_root + 18
+        if y + pop.winfo_reqheight() > pop.winfo_screenheight() - 40:
+            y = event.y_root - pop.winfo_reqheight() - 12
+        pop.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        pop.bind("<Escape>", lambda e: self.close_note())
+        pop.focus_set()
+        return "break"
+
+    def close_note(self, event=None):
+        pop = getattr(self, "note_popup", None)
+        if pop is not None and pop.winfo_exists():
+            pop.destroy()
+        self.note_popup = None
 
     # -- défilement : le passage lu reste au milieu de la page
     def _center(self, start, end, animate=True):
@@ -1540,7 +1798,9 @@ class App:
 
     # -- surlignage personnel, mémorisé par livre et par chapitre
     def _offset(self, index):
-        return _count(self.text, "1.0", index, "chars")
+        # « indices » compte aussi les images intégrées, comme l'arithmétique « 1.0+Nc » ;
+        # « chars » les ignorerait et décalerait les surlignages placés après une image
+        return _count(self.text, "1.0", index, "indices")
 
     def _apply_highlights(self, ch):
         """Pose les surlignages du chapitre ; les retrouve par leur texte si le découpage a changé."""
@@ -1835,6 +2095,7 @@ class App:
         if getattr(self, "_voice_job", None):
             self._apply_voice()
         self.narrator.stop()
+        self.close_note()
         if self.book_path:
             self._set_bookmark()
         self._save_progress()
