@@ -7,6 +7,7 @@ import queue
 import re
 import sys
 import threading
+import time
 from pathlib import Path
 
 import tkinter as tk
@@ -250,6 +251,108 @@ def _best_cut(sentence):
         if spots:
             return spots[-1]
     return hi
+
+
+# ---------------------------------------------------------------- bibliothèque
+
+COVERS_DIR = Path.home() / ".voixlivre" / "couvertures"
+COVER_SIZE = (132, 198)                         # vignette affichée dans la bibliothèque
+
+
+def _clean_stem(path):
+    """Nom de fichier sans les mentions entre parenthèses ou crochets (auteur, site…)."""
+    stem = Path(path).stem
+    return re.sub(r"\s*[(\[][^)\]]*[)\]]", "", stem).strip() or stem
+
+
+def _epub_cover_bytes(book):
+    """Image de couverture d'un EPUB, en essayant les différentes façons de la déclarer."""
+    import ebooklib
+
+    images = list(book.get_items_of_type(ebooklib.ITEM_IMAGE)) + list(book.get_items_of_type(ebooklib.ITEM_COVER))
+    for meta in book.get_metadata("OPF", "cover"):                      # EPUB 2 : <meta name="cover">
+        item = book.get_item_with_id((meta[1] or {}).get("content", ""))
+        if item is not None:
+            return item.get_content()
+    for item in images:                                                 # EPUB 3 : properties="cover-image"
+        if "cover-image" in (getattr(item, "properties", None) or []):
+            return item.get_content()
+    for item in images:                                                 # nom de fichier évocateur
+        if "cover" in item.get_name().lower() or "couv" in item.get_name().lower():
+            return item.get_content()
+    for idref, _ in book.spine[:2]:                                     # image de la première page
+        doc = book.get_item_with_id(idref)
+        if doc is None:
+            continue
+        match = re.search(rb"""<(?:img|image)[^>]+(?:src|href)=["']([^"']+)""", doc.get_content())
+        if match:
+            name = match.group(1).decode("utf-8", "ignore").split("/")[-1]
+            for item in images:
+                if item.get_name().split("/")[-1] == name:
+                    return item.get_content()
+    return None
+
+
+def book_info(path):
+    """Titre, auteur et image de couverture (octets ou None) d'un livre."""
+    ext = Path(path).suffix.lower()
+    title, author, cover = _clean_stem(path), "", None
+    try:
+        if ext == ".epub":
+            from ebooklib import epub
+
+            book = epub.read_epub(str(path), options={"ignore_ncx": True})
+            title = (book.get_metadata("DC", "title") or [(title,)])[0][0] or title
+            author = ", ".join(a[0] for a in book.get_metadata("DC", "creator") if a and a[0])
+            cover = _epub_cover_bytes(book)
+        elif ext == ".pdf":
+            from pypdf import PdfReader
+
+            reader = PdfReader(str(path))
+            meta = reader.metadata or {}
+            title = str(meta.get("/Title") or "").strip() or title
+            author = str(meta.get("/Author") or "").strip()
+            images = reader.pages[0].images if reader.pages else []
+            cover = images[0].data if len(images) else None
+    except Exception:  # noqa: BLE001 — un livre abîmé garde son nom de fichier et une couverture générée
+        pass
+    title = re.sub(r"^(?:Microsoft Word|Microsoft PowerPoint)\s*-\s*", "", re.sub(r"\s+", " ", str(title)).strip())
+    # métadonnées fantaisistes (URL, HTML, nom de fichier technique…) : on garde le nom du fichier
+    if not title or len(title) > 150 or re.search(r"[<>{}]|^[a-z]+:|\.(?:docx?|pdf|epub|indd)$", title, re.I):
+        title = _clean_stem(path)
+    author = re.sub(r"\s+", " ", author).strip()
+    if len(author) > 100 or re.search(r"[<>{}]|^[a-z]+:", author, re.I):
+        author = ""
+    return {"title": title, "author": author, "cover": cover}
+
+
+def save_cover(path, data):
+    """Enregistre la vignette de couverture dans le cache ; renvoie le nom du fichier ou ""."""
+    if not data:
+        return ""
+    import hashlib
+    import io
+
+    from PIL import Image
+
+    try:
+        img = Image.open(io.BytesIO(data)).convert("RGB")
+        # recadrage au format de la vignette, sans déformer
+        ratio = COVER_SIZE[0] / COVER_SIZE[1]
+        w, h = img.size
+        if w / h > ratio:
+            nw = int(h * ratio)
+            img = img.crop(((w - nw) // 2, 0, (w - nw) // 2 + nw, h))
+        else:
+            nh = int(w / ratio)
+            img = img.crop((0, 0, w, nh))
+        img = img.resize(COVER_SIZE, Image.LANCZOS)
+        COVERS_DIR.mkdir(parents=True, exist_ok=True)
+        name = hashlib.sha1(str(path).encode("utf-8")).hexdigest()[:16] + ".png"
+        img.save(COVERS_DIR / name)
+        return name
+    except Exception:  # noqa: BLE001 — image illisible : couverture générée à la place
+        return ""
 
 
 def split_chunks(text):
@@ -725,6 +828,7 @@ class App:
         self.ui_q = queue.Queue()
         self.narrator = Narrator(lambda kind, data: self.ui_q.put((kind, data)))
         self.book_path = None
+        self.book_title = "AUCUN LIVRE"
         self.chapters = []
         self.current = (0, 0)
         self.playing = False
@@ -745,6 +849,8 @@ class App:
         threading.Thread(target=self._load_model_safe, daemon=True).start()
         if initial:
             root.after(200, lambda: self.open_book(initial))
+        else:
+            root.after(200, self.show_library)          # au démarrage : la bibliothèque
 
     # -- construction
     def _build_ui(self):
@@ -789,6 +895,8 @@ class App:
             tk.Label(brand, image=self._icons[1], bg=CLOUD).pack(side="left", padx=(0, 10))
         small(brand, "VoixLivre — lecture à voix haute").pack(side="left")
         FlatButton(brand, _track("Ajouter une voix"), self.add_voice, "ghost", f["button"]).pack(side="right")
+        self.btn_library = FlatButton(brand, _track("Bibliothèque"), self.toggle_library, "ghost", f["button"])
+        self.btn_library.pack(side="left", padx=(24, 0))
         FlatButton(brand, _track("Ouvrir un livre"), self.choose_file, "solid", f["button"]).pack(
             side="right", padx=(0, 10))
         self.title_var = tk.StringVar(value="AUCUN LIVRE")
@@ -851,7 +959,8 @@ class App:
         self._apply_voice()
 
         # corps : chapitres à gauche, page du livre à droite (carte papier à ombre portée)
-        body = tk.Frame(root, bg=CLOUD, padx=28, pady=6)
+        self._build_library(root)
+        body = self.reader_view = tk.Frame(root, bg=CLOUD, padx=28, pady=6)
         body.pack(fill="both", expand=True)
         body.columnconfigure(1, weight=1)
         body.rowconfigure(1, weight=1)
@@ -924,6 +1033,270 @@ class App:
         root.bind("<Left>", lambda e: self.prev_chunk())
         root.bind("<Right>", lambda e: self.next_chunk())
 
+    # -- bibliothèque : les livres que l'on lit, rouverts en un clic
+    def _build_library(self, root):
+        f = self.fonts
+        self.library = self.progress.setdefault("_library", {})
+        self._migrate_library()
+        self._cover_images = []
+        self._library_cols = 0
+        view = self.library_view = tk.Frame(root, bg=CLOUD, padx=28, pady=6)
+        top = tk.Frame(view, bg=CLOUD)
+        top.pack(fill="x", pady=(0, 10))
+        self.library_count = tk.StringVar()
+        tk.Label(top, textvariable=self.library_count, font=f["small"], bg=CLOUD, fg=MUTED).pack(side="left")
+        FlatButton(top, _track("Ajouter des livres"), self.add_books, "ghost", f["small"],
+                   padx=10, pady=3).pack(side="right")
+
+        frame = tk.Frame(view, bg=CLOUD)
+        frame.pack(fill="both", expand=True)
+        self.library_canvas = tk.Canvas(frame, bg=CLOUD, highlightthickness=0, borderwidth=0)
+        scroll = ttk.Scrollbar(frame, command=self.library_canvas.yview)
+        self.library_canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        self.library_canvas.pack(side="left", fill="both", expand=True)
+        self.library_grid = tk.Frame(self.library_canvas, bg=CLOUD)
+        self.library_canvas.create_window(0, 0, window=self.library_grid, anchor="nw")
+        self.library_grid.bind("<Configure>", lambda e: self.library_canvas.configure(
+            scrollregion=self.library_canvas.bbox("all")))
+        self.library_canvas.bind("<Configure>", lambda e: self._layout_library())
+        # molette : seulement quand la souris survole la bibliothèque
+        wheel = lambda e: self.library_canvas.yview_scroll(-1 if e.delta > 0 else 1, "units")
+        self.library_canvas.bind("<Enter>", lambda e: root.bind_all("<MouseWheel>", wheel))
+        self.library_canvas.bind("<Leave>", lambda e: root.unbind_all("<MouseWheel>"))
+        self.library_menu = tk.Menu(root, tearoff=0, bg=PAPER, fg=COAL, activebackground=COAL,
+                                    activeforeground=CLOUD, font=f["ui"], bd=1, relief="solid")
+        self.library_mode = False
+
+    def _migrate_library(self):
+        """Les livres déjà lus avant l'arrivée de la bibliothèque y sont ajoutés."""
+        for path, entry in list(self.progress.items()):
+            if not path.startswith("_") and path not in self.library and Path(path).is_file():
+                self._library_add(path, save=False)
+
+    def _library_add(self, path, opened=False, save=True):
+        path = str(Path(path).resolve())
+        entry = self.library.get(path)
+        if entry is None:
+            info = book_info(path)
+            entry = self.library[path] = {"title": info["title"], "author": info["author"],
+                                          "cover": save_cover(path, info["cover"]),
+                                          "added": time.time(), "opened": 0, "percent": 0}
+        if opened:
+            entry["opened"] = time.time()
+        if save:
+            self._save_progress()
+        return entry
+
+    def add_books(self):
+        paths = filedialog.askopenfilenames(
+            title="Ajouter des livres à la bibliothèque",
+            filetypes=[("Livres", "*.epub *.txt *.pdf"), ("Tous les fichiers", "*.*")])
+        added = 0
+        for path in paths:
+            if Path(path).suffix.lower() not in (".epub", ".txt", ".pdf"):
+                continue
+            self.status_var.set(f"Ajout de « {Path(path).name} »…")
+            self.root.update_idletasks()
+            known = str(Path(path).resolve()) in self.library
+            self._library_add(path, save=False)
+            added += not known
+        self._save_progress()
+        if paths:
+            self.status_var.set("Ces livres sont déjà dans la bibliothèque." if not added else
+                                f"{added} livre{'s' if added > 1 else ''} ajouté{'s' if added > 1 else ''} "
+                                "à la bibliothèque.")
+        self._refresh_library()
+
+    def remove_from_library(self, path):
+        entry = self.library.get(path)
+        if not entry or not messagebox.askyesno(
+                "VoixLivre", f"Retirer « {entry['title']} » de la bibliothèque ?\n\n"
+                             "Le fichier du livre n'est pas supprimé, et la progression est conservée "
+                             "si vous le rajoutez."):
+            return
+        if entry.get("cover"):
+            try:
+                (COVERS_DIR / entry["cover"]).unlink()
+            except OSError:
+                pass
+        del self.library[path]
+        self._save_progress()
+        self._refresh_library()
+
+    def toggle_library(self):
+        if self.library_mode and self.chapters:
+            self.show_reader()
+        else:
+            self.show_library()
+
+    def show_library(self):
+        self.library_mode = True
+        self.reader_view.pack_forget()
+        self.library_view.pack(fill="both", expand=True)
+        self.title_var.set("BIBLIOTHÈQUE")
+        self.btn_library.configure(text=_track("Retour à la lecture") if self.chapters else _track("Bibliothèque"))
+        self._refresh_library()
+
+    def show_reader(self):
+        self.library_mode = False
+        self.library_view.pack_forget()
+        self.reader_view.pack(fill="both", expand=True)
+        self.title_var.set(self.book_title)
+        self.btn_library.configure(text=_track("Bibliothèque"))
+        self.root.after_idle(lambda: self._highlight(*self.current, animate=False) if self.chapters else None)
+
+    def _library_books(self):
+        """Livres triés : derniers ouverts d'abord, puis derniers ajoutés."""
+        return sorted(self.library.items(), key=lambda kv: (kv[1].get("opened", 0), kv[1].get("added", 0)),
+                      reverse=True)
+
+    def _refresh_library(self):
+        self._library_cols = 0                    # force la reconstruction de la grille
+        self._layout_library()
+
+    def _layout_library(self):
+        if not self.library_mode:
+            return
+        # la mesure des cartes peut redéclencher un redimensionnement : pas de mise en page imbriquée,
+        # on la refait simplement juste après
+        if getattr(self, "_laying_out", False):
+            return
+        self._laying_out = True
+        try:
+            self._layout_library_now()
+        finally:
+            self._laying_out = False
+
+    def _layout_library_now(self):
+        card_w = getattr(self, "_card_w", COVER_SIZE[0] + 28)   # affinée d'après les cartes réelles
+        cols = max(1, (self.library_canvas.winfo_width() + 18) // (card_w + 18))
+        if cols == self._library_cols:
+            return
+        self._library_cols = cols
+        for child in self.library_grid.winfo_children():
+            child.destroy()
+        self._cover_images.clear()
+        books = self._library_books()
+        n = len(books)
+        self.library_count.set(_track(f"{n} livre{'s' if n > 1 else ''}"))
+        if not books:
+            tk.Label(self.library_grid, text="Votre bibliothèque est vide.\n\nOuvrez un livre ou cliquez sur "
+                     "« Ajouter des livres » : il apparaîtra ici avec sa couverture et votre progression.",
+                     font=self.fonts["ui"], bg=CLOUD, fg=MUTED, justify="left").grid(row=0, column=0, sticky="w")
+            return
+        cards = []
+        for k, (path, entry) in enumerate(books):
+            card = self._library_card(path, entry)
+            card.grid(row=k // cols, column=k % cols, padx=(0, 18), pady=(0, 18), sticky="nsew")
+            cards.append(card)
+        # largeur réelle des cartes mesurée un peu plus tard, une fois Tk les a dimensionnées
+        # (jamais d'update_idletasks ici : il relancerait la mise en page en boucle)
+        self._layout_job = self.root.after(80, self._check_card_width, cards, card_w)
+
+    def _check_card_width(self, cards, card_w):
+        self._layout_job = None
+        alive = [c for c in cards if c.winfo_exists()]
+        real = max((c.winfo_reqwidth() for c in alive), default=0)
+        if real > card_w:                        # une carte plus large que prévu : on recompte les colonnes
+            self._card_w = real
+            self._library_cols = 0
+            self._layout_library()
+
+    def _library_card(self, path, entry):
+        f = self.fonts
+        missing = not Path(path).is_file()
+        current = path == self.book_path
+        card = tk.Frame(self.library_grid, bg=OCHRE if current else COAL, padx=2, pady=2, cursor="hand2")
+        inner = tk.Frame(card, bg=PAPER, padx=12, pady=12)
+        inner.pack(fill="both", expand=True)
+
+        photo = None
+        if entry.get("cover") and (COVERS_DIR / entry["cover"]).is_file():
+            try:
+                photo = tk.PhotoImage(file=str(COVERS_DIR / entry["cover"]))
+            except tk.TclError:
+                photo = None
+        if photo:
+            self._cover_images.append(photo)
+            cover = tk.Label(inner, image=photo, bg=COAL, bd=0, highlightthickness=1, highlightbackground=COAL)
+        else:                                     # couverture générée, façon affiche MontLivre
+            cover = tk.Frame(inner, bg=OCHRE, width=COVER_SIZE[0], height=COVER_SIZE[1],
+                             highlightthickness=1, highlightbackground=COAL)
+            cover.pack_propagate(False)
+            tk.Label(cover, text=entry["title"].upper()[:60], font=(f["big"][0], 11), bg=OCHRE, fg=COAL,
+                     wraplength=COVER_SIZE[0] - 16, justify="left", anchor="nw").pack(fill="both", padx=8, pady=8)
+            tk.Label(cover, text=_track(Path(path).suffix.lstrip(".")), font=f["small"], bg=OCHRE,
+                     fg=COAL).pack(side="bottom", anchor="w", padx=8, pady=8)
+        cover.pack()
+
+        width = COVER_SIZE[0]
+        if current or missing:
+            tk.Label(inner, text=_track("Introuvable" if missing else "En lecture"), font=f["small"],
+                     bg=PAPER, fg=OCHRE if not missing else MUTED).pack(anchor="w", pady=(8, 0))
+        title = entry["title"] if len(entry["title"]) <= 70 else entry["title"][:68] + "…"
+        tk.Label(inner, text=title, font=f["button"], bg=PAPER, fg=ASH if missing else COAL,
+                 wraplength=width, justify="left", anchor="w").pack(anchor="w", pady=(8, 0))
+        if entry.get("author"):
+            tk.Label(inner, text=entry["author"][:50], font=f["ui"], bg=PAPER, fg=MUTED, wraplength=width,
+                     justify="left", anchor="w").pack(anchor="w")
+        pct = max(0, min(int(entry.get("percent", 0)), 100))
+        bar = tk.Frame(inner, bg=CLOUD, width=width, height=6, highlightthickness=1, highlightbackground=COAL)
+        bar.pack(anchor="w", pady=(10, 4))
+        if pct:
+            tk.Frame(bar, bg=OCHRE, height=4).place(x=0, y=0, relheight=1, relwidth=pct / 100)
+        opened = entry.get("opened")
+        when = time.strftime("Lu le %d/%m/%Y", time.localtime(opened)) if opened else "Pas encore ouvert"
+        meta = tk.Frame(inner, bg=PAPER, width=width)
+        meta.pack(fill="x")
+        tk.Label(meta, text=f"{pct} %", font=f["button"], bg=PAPER, fg=COAL).pack(side="left")
+        tk.Label(meta, text=when, font=(f["ui"][0], 8), bg=PAPER, fg=MUTED).pack(side="right")
+
+        def bind_all(widget):
+            widget.bind("<Button-1>", lambda e: self._open_from_library(path))
+            widget.bind("<Button-3>", lambda e: self._library_context(e, path))
+            widget.bind("<Enter>", lambda e: card.configure(bg=OCHRE))
+            widget.bind("<Leave>", lambda e: card.configure(bg=OCHRE if current else COAL))
+            for child in widget.winfo_children():
+                bind_all(child)
+
+        bind_all(card)
+        return card
+
+    def _open_from_library(self, path):
+        if not Path(path).is_file():
+            if messagebox.askyesno("VoixLivre", f"Le fichier est introuvable :\n{path}\n\n"
+                                                "Le retirer de la bibliothèque ?"):
+                entry = self.library.get(path)
+                if entry and entry.get("cover"):
+                    try:
+                        (COVERS_DIR / entry["cover"]).unlink()
+                    except OSError:
+                        pass
+                self.library.pop(path, None)
+                self._save_progress()
+                self._refresh_library()
+            return
+        if path == self.book_path:
+            self.show_reader()
+        elif self.open_book(path):
+            self.show_reader()
+
+    def _library_context(self, event, path):
+        m = self.library_menu
+        m.delete(0, "end")
+        m.add_command(label="Ouvrir", command=lambda: self._open_from_library(path))
+        m.add_command(label="Retirer de la bibliothèque", command=lambda: self.remove_from_library(path))
+        m.tk_popup(event.x_root, event.y_root)
+
+    def _book_percent(self):
+        if not self.chapters:
+            return 0
+        ch, idx = self.current
+        chunks = self.narrator.chunks
+        done = sum(len(c) for c in chunks[:ch]) + idx
+        return 100 * done // max(sum(len(c) for c in chunks), 1)
+
     def _update_stats(self, ch, idx):
         """Bandeau orange et barre de la page : chapitre, progression, voix."""
         self.stat_vars["voice"].set(self.speaker_var.get())
@@ -949,8 +1322,8 @@ class App:
         path = filedialog.askopenfilename(
             title="Choisir un livre",
             filetypes=[("Livres", "*.epub *.txt *.pdf"), ("Tous les fichiers", "*.*")])
-        if path:
-            self.open_book(path)
+        if path and self.open_book(path):
+            self.show_reader()
 
     def open_book(self, path):
         if self.book_path:
@@ -961,13 +1334,15 @@ class App:
             chapters = load_book(path)
         except Exception as exc:  # noqa: BLE001
             messagebox.showerror("VoixLivre", f"Lecture du fichier impossible :\n{exc}")
-            return
+            return False
         self.book_path = str(Path(path).resolve())
         self.chapters = chapters
         self.narrator.load([split_chunks(text) for _, text in chapters])
-        # titre du fichier sans les mentions entre parenthèses (auteur, site…)
-        title = re.sub(r"\s*[(\[][^)\]]*[)\]]", "", Path(path).stem).strip() or Path(path).stem
-        self.title_var.set(title.upper()[:44] + ("…" if len(title) > 44 else ""))
+        entry = self._library_add(self.book_path, opened=True, save=False)
+        title = entry["title"]
+        self.book_title = title.upper()[:44] + ("…" if len(title) > 44 else "")
+        if not self.library_mode:
+            self.title_var.set(self.book_title)
         self.chap_list.delete(0, "end")
         for title, _ in chapters:
             self.chap_list.insert("end", title)
@@ -985,6 +1360,8 @@ class App:
         self._mark_bookmark_chapter()
         if (ch, idx) != (0, 0):
             self.status_var.set(f"Reprise au marque-page : « {chapters[ch][0]} ».")
+        self._save_progress()
+        return True
 
     def _valid_pos(self, pos):
         """(chapitre, segment) sauvegardé, ramené dans les limites du livre (il a pu changer)."""
@@ -1336,6 +1713,8 @@ class App:
                 "bookmark": list(self.bookmark) if self.bookmark else None,
                 "highlights": {k: v for k, v in self.highlights.items() if v},
             }
+            if self.book_path in self.library:
+                self.library[self.book_path]["percent"] = self._book_percent()
         # réglages tels qu'affichés (le style reste mémorisé même s'il est inactif pour une voix clonée)
         self.progress["_voice"] = {"speaker": self.speaker_var.get(), "language": self.lang_var.get(),
                                    "instruct": self.instruct_var.get()}
@@ -1345,7 +1724,8 @@ class App:
             pass
 
     def on_close(self):
-        for job in (self._poll_job, self._scroll_job, getattr(self, "_voice_job", None)):
+        for job in (self._poll_job, self._scroll_job, getattr(self, "_voice_job", None),
+                    getattr(self, "_layout_job", None)):
             if job:
                 self.root.after_cancel(job)
         if getattr(self, "_voice_job", None):
