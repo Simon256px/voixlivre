@@ -584,6 +584,8 @@ DISCORD_DEFAULTS = {
     "line1": "« {titre} »",
     "line2": "{auteur} · {progression} %",
     "idle": "Choisit un livre dans sa bibliothèque",
+    "private": False,                            # mode discret : on voit VoixLivre, pas le livre
+    "private_text": "Écoute un livre",
     "show_button": True,
     "button_label": "VoixLivre sur GitHub",
     "button_url": GITHUB_URL,
@@ -1661,11 +1663,16 @@ class App:
         except ImportError:
             listening = None
         reading = bool(self.chapters) and not self.library_mode or self.playing
-        if reading:
+        paused = self.paused or not self.playing
+        if reading and s.get("private"):
+            # mode discret : aucun champ ({titre}…) n'est rempli, rien ne dévoile le livre
+            details = discord_text(s.get("private_text", ""), {}) or "Écoute un livre"
+            state = "En pause" if paused else None
+        elif reading:
             values = self._discord_values()
             details = discord_text(s["line1"], values)
             state = discord_text(s["line2"], values)
-            if self.paused or not self.playing:
+            if paused:
                 state = discord_text(f"{state or ''} · en pause", {}) if state else "En pause"
         else:
             details, state = discord_text(s["idle"], {}), None
@@ -1708,10 +1715,13 @@ class App:
 
         enabled = tk.BooleanVar(value=s["enabled"])
         show_button = tk.BooleanVar(value=s["show_button"])
+        private = tk.BooleanVar(value=s.get("private", False))
         check = lambda parent, text, var: tk.Checkbutton(
             parent, text=text, variable=var, font=f["ui"], bg=CLOUD, fg=COAL, activebackground=CLOUD,
             activeforeground=COAL, selectcolor=PAPER, anchor="w", highlightthickness=0, bd=0)
         check(win, "Afficher sur mon profil Discord ce que j'écoute", enabled).pack(fill="x")
+        check(win, "Mode discret : montrer que j'utilise VoixLivre, sans dévoiler le livre",
+              private).pack(fill="x", pady=(4, 0))
 
         fields = {}
 
@@ -1735,6 +1745,7 @@ class App:
                              justify="left", wraplength=520)
         help_link.pack(fill="x", pady=(3, 0))
         help_link.bind("<Button-1>", lambda e: webbrowser.open("https://discord.com/developers/applications"))
+        field("private_text", "Texte en mode discret", "Affiché à la place du titre ; aucun champ n'est rempli.")
         field("line1", "Ligne 1 pendant l'écoute", f"Champs possibles : {DISCORD_FIELDS}")
         field("line2", "Ligne 2 pendant l'écoute")
         field("idle", "Texte quand aucun livre n'est ouvert")
@@ -1758,6 +1769,7 @@ class App:
             out = dict(s)
             out.update({k: v.get() for k, v in fields.items()})
             out["enabled"], out["show_button"] = enabled.get(), show_button.get()
+            out["private"] = private.get()
             return out
 
         def refresh():
@@ -1773,6 +1785,7 @@ class App:
         refresh()
         enabled.trace_add("write", lambda *_: refresh())
         show_button.trace_add("write", lambda *_: refresh())
+        private.trace_add("write", lambda *_: refresh())
         status.set(f"État : {self.discord.status}")
         self._discord_status_label = tk.Label(win, textvariable=status, font=(f["ui"][0], 9, "bold"), bg=CLOUD,
                                               fg=MUTED, anchor="w")

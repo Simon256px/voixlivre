@@ -17,8 +17,9 @@ polices Archivo et Literata, noir, gris nuage, papier et orange.
 - **Images et notes de l'ebook** affichées à leur place (jamais lues) : aperçu de la note au survol
   de l'appel, façon Obsidian (épinglé au clic) ; liste des notes en fin de chapitre
 - **Activité Discord** (« Écoute VoixLivre ») : titre, auteur, progression, temps écoulé et bouton
-  vers ce dépôt, textes personnalisables. Rien à configurer : bouton « Discord », cocher
-  « Afficher sur mon profil Discord ce que j'écoute ».
+  vers ce dépôt, textes personnalisables, et **mode discret** (« Écoute un livre », sans dévoiler
+  lequel). Rien à configurer : bouton « Discord », cocher « Afficher sur mon profil Discord ce
+  que j'écoute ».
 - **Passage lu toujours au milieu** de la page, **surlignage** personnel par livre et **marque-page**
   posé automatiquement là où l'on s'arrête
 
