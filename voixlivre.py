@@ -619,7 +619,8 @@ class DiscordPresence:
         self.on_status = on_status
         self.status = "désactivée"
         self.queue = queue.Queue()
-        threading.Thread(target=self._run, daemon=True).start()
+        self.thread = threading.Thread(target=self._run, daemon=True)
+        self.thread.start()
 
     def configure(self, client_id, enabled):
         self.queue.put(("config", (str(client_id).strip(), bool(enabled))))
@@ -628,8 +629,11 @@ class DiscordPresence:
         """activity : paramètres de pypresence.Presence.update, ou None pour effacer l'activité."""
         self.queue.put(("activity", activity))
 
-    def close(self):
+    def close(self, wait=0.0):
+        """Efface l'activité et ferme la connexion ; `wait` : secondes max. à attendre (fermeture de l'app)."""
         self.queue.put(("quit", None))
+        if wait:
+            self.thread.join(wait)
 
     def _set_status(self, status):
         if status != self.status:
@@ -1218,7 +1222,7 @@ class App:
             self.discord_settings["client_id"] = DISCORD_DEFAULTS["client_id"]
         self.discord = DiscordPresence(lambda status: self.ui_q.put(("discord", status)))
         self.discord.configure(self.discord_settings["client_id"], self.discord_settings["enabled"])
-        self._listen_start = None                 # début de l'écoute en cours (temps écoulé sur Discord)
+        self._session_start = int(time.time())    # chrono Discord : depuis l'ouverture de l'application
         self._discord_window = None
         self._discord_status_var = None
 
@@ -1748,15 +1752,14 @@ class App:
                 state = discord_text(f"{state or ''} · en pause", {}) if state else "En pause"
         else:
             details, state = discord_text(s["idle"], {}), None
-        activity = {"large_image": ICON_URL, "large_text": "VoixLivre — lecture à voix haute"}
+        # sobre : icône, une ligne (+ « En pause »), chrono depuis l'ouverture de l'application
+        activity = {"large_image": ICON_URL, "start": self._session_start}
         if listening is not None:
             activity["activity_type"] = listening
         if details:
             activity["details"] = details
         if state:
             activity["state"] = state
-        if self.playing and not self.paused and self._listen_start:
-            activity["start"] = self._listen_start
         label, url = s["button_label"].strip()[:32], s["button_url"].strip()
         if s["show_button"] and len(label) >= 1 and re.match(r"^https?://\S+\.\S+", url):
             activity["buttons"] = [{"label": label, "url": url}]
@@ -1849,7 +1852,7 @@ class App:
             act = self._discord_activity({**cs, "enabled": True}) or {}
             lines = ["ÉCOUTE VOIXLIVRE", act.get("details", ""), act.get("state", "")]
             if act.get("start"):
-                lines.append("00:42 écoulées")
+                lines.append("♫ 0:42  (depuis l'ouverture de VoixLivre)")
             if act.get("buttons"):
                 lines.append(f"[ {act['buttons'][0]['label']} ]")
             preview.set("\n".join(line for line in lines if line))
@@ -2450,8 +2453,6 @@ class App:
             self.status_var.set("En pause — marque-page posé" if self.paused else "Lecture")
             if self.paused:
                 self._set_bookmark()
-            else:
-                self._listen_start = int(time.time())
             self._update_discord()
 
     def jump(self, ch, idx):
@@ -2462,7 +2463,6 @@ class App:
         self.playing, self.paused = True, False
         self._paint_play_button()
         self.narrator.play(ch, idx)
-        self._listen_start = int(time.time())
         self._update_discord()
 
     def play_chapter(self):
@@ -2642,7 +2642,7 @@ class App:
             self._apply_voice()
         self.narrator.stop()
         self.close_note()
-        self.discord.close()                      # efface l'activité sur Discord
+        self.discord.close(wait=1.5)              # efface l'activité (et son chrono) sur Discord
         if self.book_path:
             self._set_bookmark()
         self._save_progress()
