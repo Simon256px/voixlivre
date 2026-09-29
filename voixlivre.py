@@ -1006,7 +1006,7 @@ class Narrator:
 # ---------------------------------------------------------------- interface
 
 # Identité visuelle de MontLivre (https://simon256px.github.io/MontLivre/)
-YOLK, OCHRE, VIOLET = "#ffa51e", "#ff5500", "#7d00ff"      # accents, identiques de jour et de nuit
+YOLK, OCHRE, VIOLET, MOSS = "#ffa51e", "#ff5500", "#7d00ff", "#00aa46"   # accents MontLivre, jour et nuit
 ON_ACCENT = "#010101"       # texte posé sur l'orange ou le jaune : toujours noir (valeur distincte de COAL)
 # Couleurs de base selon le mode. COAL = encre et bordures, CLOUD = fond de la fenêtre,
 # PAPER = page du livre, MARKER = surlignage personnel (violet MontLivre éclairci ou assombri).
@@ -1077,7 +1077,8 @@ class FlatButton(tk.Frame):
         """(fond, texte, fond survolé, texte survolé), lus au moment de peindre : suivent le mode jour/nuit."""
         return {"solid": (COAL, CLOUD, OCHRE, ON_ACCENT),
                 "ghost": (CLOUD, COAL, COAL, CLOUD),
-                "accent": (OCHRE, ON_ACCENT, COAL, OCHRE)}[kind]
+                "accent": (OCHRE, ON_ACCENT, COAL, OCHRE),
+                "moss": (MOSS, ON_ACCENT, COAL, MOSS)}[kind]
 
     def __init__(self, parent, text, command, kind="solid", font=None, width=None, padx=16, pady=7):
         super().__init__(parent, bg=COAL, padx=2, pady=2)
@@ -1236,12 +1237,13 @@ class App:
         self.stat_vars = {}
         for col, (key, label) in enumerate((("chapter", "Chapitre"), ("progress", "Progression"),
                                             ("voice", "Voix"))):
-            cell = tk.Frame(band, bg=OCHRE, padx=16, pady=8)
+            color = MOSS if key == "progress" else OCHRE           # la progression en vert Moss
+            cell = tk.Frame(band, bg=color, padx=16, pady=8)
             cell.grid(row=0, column=col, sticky="nsew", padx=(0 if col == 0 else 2, 0))
             band.columnconfigure(col, weight=1, uniform="stats")
-            small(cell, label, bg=OCHRE, fg=ON_ACCENT).pack(anchor="w")
+            small(cell, label, bg=color, fg=ON_ACCENT).pack(anchor="w")
             self.stat_vars[key] = tk.StringVar(value="—")
-            tk.Label(cell, textvariable=self.stat_vars[key], font=f["big"], bg=OCHRE, fg=ON_ACCENT,
+            tk.Label(cell, textvariable=self.stat_vars[key], font=f["big"], bg=color, fg=ON_ACCENT,
                      anchor="w").pack(anchor="w")
 
         controls = tk.Frame(foot, bg=CLOUD)
@@ -1582,7 +1584,7 @@ class App:
         bar = tk.Frame(inner, bg=CLOUD, width=width, height=6, highlightthickness=1, highlightbackground=COAL)
         bar.pack(anchor="w", pady=(10, 4))
         if pct:
-            tk.Frame(bar, bg=OCHRE, height=4).place(x=0, y=0, relheight=1, relwidth=pct / 100)
+            tk.Frame(bar, bg=MOSS, height=4).place(x=0, y=0, relheight=1, relwidth=pct / 100)
         opened = entry.get("opened")
         when = time.strftime("Lu le %d/%m/%Y", time.localtime(opened)) if opened else "Pas encore ouvert"
         meta = tk.Frame(inner, bg=PAPER, width=width)
@@ -1770,8 +1772,12 @@ class App:
         enabled.trace_add("write", lambda *_: refresh())
         show_button.trace_add("write", lambda *_: refresh())
         status.set(f"État : {self.discord.status}")
-        tk.Label(win, textvariable=status, font=(f["ui"][0], 9), bg=CLOUD, fg=MUTED, anchor="w").pack(
-            fill="x", pady=(12, 0))
+        self._discord_status_label = tk.Label(win, textvariable=status, font=(f["ui"][0], 9, "bold"), bg=CLOUD,
+                                              fg=MUTED, anchor="w")
+        self._discord_status_label.pack(fill="x", pady=(12, 0))
+        status.trace_add("write", lambda *_: self._discord_status_label.configure(
+            fg=MOSS if status.get().endswith("connectée") else MUTED))
+        status.set(status.get())
 
         def save():
             self.discord_settings = current_settings()
@@ -2350,7 +2356,7 @@ class App:
         else:
             self.paused = not self.paused
             self.narrator.set_paused(self.paused)
-            self.btn_play.configure(text="▶" if self.paused else "⏸")
+            self._paint_play_button()
             self.status_var.set("En pause — marque-page posé" if self.paused else "Lecture")
             if self.paused:
                 self._set_bookmark()
@@ -2364,7 +2370,7 @@ class App:
         self.current = (ch, idx)
         self._highlight(ch, idx)
         self.playing, self.paused = True, False
-        self.btn_play.configure(text="⏸")
+        self._paint_play_button()
         self.narrator.play(ch, idx)
         self._listen_start = int(time.time())
         self._update_discord()
@@ -2377,7 +2383,7 @@ class App:
     def stop(self):
         self.narrator.stop()
         self.playing = self.paused = False
-        self.btn_play.configure(text="▶")
+        self._paint_play_button()
         self._update_discord()
 
     def next_chunk(self):
@@ -2403,6 +2409,13 @@ class App:
         else:
             self.current = (ch, idx)
             self._highlight(ch, idx)
+
+    def _paint_play_button(self):
+        """▶ orange à l'arrêt ou en pause, ⏸ vert Moss pendant la lecture."""
+        reading = self.playing and not self.paused
+        self.btn_play.kind = "moss" if reading else "accent"
+        self.btn_play.configure(text="⏸" if reading else "▶")
+        self.btn_play._paint()
 
     def _voice_names(self):
         # les voix clonées (lectrices françaises natives) d'abord, puis les voix intégrées au modèle
