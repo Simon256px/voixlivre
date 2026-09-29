@@ -580,7 +580,7 @@ def add_cloned_voice(name, audio_path, text):
 ICON_URL = "https://raw.githubusercontent.com/Simon256px/voixlivre/main/assets/icon.png"
 DISCORD_DEFAULTS = {
     "enabled": False,
-    "client_id": "",                             # « Application ID » créé sur discord.com/developers
+    "client_id": "1554473990490292264",          # application Discord « VoixLivre » (identifiant public)
     "line1": "« {titre} »",
     "line2": "{auteur} · {progression} %",
     "idle": "Choisit un livre dans sa bibliothèque",
@@ -1142,6 +1142,8 @@ class App:
         set_theme(self.progress.get("_theme", "jour"))      # mode jour/nuit mémorisé
         saved = self.progress.get("_discord")
         self.discord_settings = {**DISCORD_DEFAULTS, **(saved if isinstance(saved, dict) else {})}
+        if not str(self.discord_settings["client_id"]).strip():     # vide : application VoixLivre par défaut
+            self.discord_settings["client_id"] = DISCORD_DEFAULTS["client_id"]
         self.discord = DiscordPresence(lambda status: self.ui_q.put(("discord", status)))
         self.discord.configure(self.discord_settings["client_id"], self.discord_settings["enabled"])
         self._listen_start = None                 # début de l'écoute en cours (temps écoulé sur Discord)
