@@ -646,77 +646,141 @@ class DiscordPresence:
             return "identifiant d'application refusé par Discord"
         if name in ("PipeClosed", "BrokenPipeError", "ConnectionResetError"):
             return "connexion à Discord perdue, nouvel essai…"
+        if name in ("TimeoutError", "ResponseTimeout", "ConnectionTimeout"):
+            return "Discord ne répond pas, nouvel essai…"
         return f"erreur Discord : {exc}"[:120]
 
+    TIMEOUT = 10                                 # délai maximal d'attente d'une réponse de Discord
+    CONNECT_TIMEOUT = 45                         # après une déconnexion, Discord met jusqu'à ~30 s à répondre
+
+    def _connect(self):
+        """Nouvelle connexion, sur une boucle d'événements neuve et avec un délai maximal : une tentative
+        ratée (Discord fermé, identifiant refusé) ne peut ni bloquer ni gâcher la suivante."""
+        import asyncio
+
+        from pypresence import Presence
+
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        rpc = Presence(self._client_id, loop=loop, response_timeout=self.TIMEOUT)
+        try:
+            rpc.update_event_loop(loop)
+            loop.run_until_complete(asyncio.wait_for(rpc.handshake(), self.CONNECT_TIMEOUT))
+        except BaseException:
+            self._drop(rpc)
+            raise
+        return rpc
+
+    @staticmethod
+    def _drop(rpc):
+        """Ferme le canal vers Discord jusqu'au bout (sinon Windows le garde ouvert et la connexion
+        suivante n'aboutit pas), sans jamais attendre plus de 2 s ; puis ferme la boucle."""
+        import asyncio
+
+        loop = rpc.loop
+        try:
+            if rpc.sock_writer is not None and not loop.is_closed():
+                rpc.sock_writer.close()
+                loop.run_until_complete(asyncio.wait_for(rpc.sock_writer.wait_closed(), 2))
+        except BaseException:  # noqa: BLE001 — canal déjà coupé
+            pass
+        try:
+            if not loop.is_closed():
+                loop.run_until_complete(asyncio.sleep(0.05))   # laisse Windows libérer le canal
+                loop.close()
+        except BaseException:  # noqa: BLE001
+            pass
+        rpc.sock_writer = rpc.sock_reader = None
+
     def _disconnect(self, rpc):
-        if rpc is not None:
-            for action in (rpc.clear, rpc.close):
-                try:
-                    action()
-                except Exception:  # noqa: BLE001 — Discord déjà fermé
-                    pass
+        """Efface l'activité puis ferme proprement ; chaque étape a un délai maximal."""
+        if rpc is None:
+            return
+        try:
+            rpc.clear()                          # attend au plus TIMEOUT secondes
+        except Exception:  # noqa: BLE001 — Discord déjà fermé
+            pass
+        try:
+            rpc.send_data(2, {"v": 1, "client_id": rpc.client_id})
+        except Exception:  # noqa: BLE001
+            pass
+        self._drop(rpc)
 
     def _run(self):
         import asyncio
 
         asyncio.set_event_loop(asyncio.new_event_loop())      # pypresence a besoin d'une boucle par fil
-        rpc, client_id, enabled = None, "", False
-        wanted, sent, last_sent, retry_at = None, object(), 0.0, 0.0
+        self._rpc, self._client_id, self._enabled = None, "", False
+        self._wanted, self._sent, self._last_sent, self._retry_at = None, object(), 0.0, 0.0
         while True:
             try:
                 kind, data = self.queue.get(timeout=1)
             except queue.Empty:
                 kind = data = None
             if kind == "quit":
-                self._disconnect(rpc)
+                self._disconnect(self._rpc)
                 return
+            self._step(kind, data)
             if kind == "config":
-                new_id, enabled = data
-                if new_id != client_id or not enabled:
-                    self._disconnect(rpc)
-                    rpc, sent, retry_at = None, object(), 0.0
-                client_id = new_id
-            elif kind == "activity":
-                wanted = data
-            if not enabled:
-                self._set_status("désactivée")
-                continue
-            if not client_id:
-                self._set_status("identifiant d'application manquant")
-                continue
-            now = time.time()
-            if rpc is None:
-                if now < retry_at:
-                    continue
-                try:
-                    from pypresence import Presence
+                # après un enregistrement, toujours annoncer l'état, même inchangé
+                # (sinon la fenêtre de réglages resterait sur « connexion… »)
+                self.on_status(self.status)
 
-                    rpc = Presence(client_id)
-                    rpc.connect()
-                    sent, last_sent = object(), 0.0
-                    self._set_status("connectée")
-                except Exception as exc:  # noqa: BLE001 — Discord absent ou identifiant faux
-                    self._disconnect(rpc)
-                    rpc, retry_at = None, now + 20
-                    self._set_status(self._explain(exc))
-                    continue
-            if wanted is None and not last_sent:
-                sent = None                      # rien d'affiché : inutile d'effacer (et d'attendre 15 s)
-            if wanted != sent and now - last_sent >= self.INTERVAL:
+    def _step(self, kind, data):
+        if kind == "config":
+            new_id, self._enabled = data
+            if new_id != self._client_id:        # autre application : nouvelle connexion
+                self._disconnect(self._rpc)
+                self._rpc, self._sent, self._last_sent = None, object(), 0.0
+            elif not self._enabled and self._rpc is not None:
+                # désactivée : on efface l'activité mais on garde la connexion, pour que la réactivation
+                # soit immédiate (Discord fait attendre ~30 s une reconnexion)
                 try:
-                    if wanted is None:
-                        rpc.clear()
-                    else:
-                        rpc.update(**wanted)
-                    sent, last_sent = wanted, now
-                    shown = "effacée" if wanted is None else " / ".join(
-                        str(wanted[k]) for k in ("details", "state") if wanted.get(k)) or "(sans texte)"
-                    print(f"[Discord {time.strftime('%H:%M:%S')}] activité envoyée : {shown}", flush=True)
-                    self._set_status("connectée")
-                except Exception as exc:  # noqa: BLE001 — Discord fermé entre-temps
-                    self._disconnect(rpc)
-                    rpc, retry_at = None, now + 20
-                    self._set_status(self._explain(exc))
+                    self._rpc.clear()
+                    self._sent, self._last_sent = None, 0.0     # réactivation : affichage immédiat
+                except Exception:  # noqa: BLE001 — Discord fermé entre-temps
+                    self._drop(self._rpc)
+                    self._rpc = None
+            self._client_id = new_id
+            self._retry_at = 0.0                  # nouvel essai immédiat après un enregistrement
+        elif kind == "activity":
+            self._wanted = data
+        if not self._enabled:
+            self._set_status("désactivée")
+            return
+        if not self._client_id:
+            self._set_status("identifiant d'application manquant")
+            return
+        now = time.time()
+        if self._rpc is None:
+            if now < self._retry_at:
+                return
+            self._set_status("connexion à Discord… (jusqu'à 30 s)")
+            try:
+                self._rpc = self._connect()
+                self._sent, self._last_sent = object(), 0.0
+                self._set_status("connectée")
+            except Exception as exc:  # noqa: BLE001 — Discord absent ou identifiant faux
+                self._rpc, self._retry_at = None, now + 20          # (_connect a déjà tout nettoyé)
+                self._set_status(self._explain(exc))
+                return
+        if self._wanted is None and not self._last_sent:
+            self._sent = None                     # rien d'affiché : inutile d'effacer (et d'attendre 15 s)
+        if self._wanted != self._sent and now - self._last_sent >= self.INTERVAL:
+            try:
+                if self._wanted is None:
+                    self._rpc.clear()
+                else:
+                    self._rpc.update(**self._wanted)
+                self._sent, self._last_sent = self._wanted, now
+                shown = "effacée" if self._wanted is None else " / ".join(
+                    str(self._wanted[k]) for k in ("details", "state") if self._wanted.get(k)) or "(sans texte)"
+                print(f"[Discord {time.strftime('%H:%M:%S')}] activité envoyée : {shown}", flush=True)
+                self._set_status("connectée")
+            except Exception as exc:  # noqa: BLE001 — Discord fermé entre-temps
+                self._drop(self._rpc)            # connexion cassée : on n'attend plus rien d'elle
+                self._rpc, self._retry_at = None, now + 20
+                self._set_status(self._explain(exc))
 
 
 class _Aborted(Exception):
@@ -1804,14 +1868,17 @@ class App:
 
         def save():
             self.discord_settings = current_settings()
+            if not self.discord_settings["client_id"].strip():   # champ vidé : application VoixLivre
+                self.discord_settings["client_id"] = DISCORD_DEFAULTS["client_id"]
+                fields["client_id"].set(DISCORD_DEFAULTS["client_id"])
             self.progress["_discord"] = self.discord_settings
             self._save_progress()
             self.discord.configure(self.discord_settings["client_id"], self.discord_settings["enabled"])
             self._update_discord()
             if not self.discord_settings["enabled"]:
                 self.discord.update(None)
-            status.set("État : enregistré — connexion…" if self.discord_settings["enabled"]
-                       else "État : désactivée")
+            status.set("État : enregistré — vérification…" if self.discord_settings["enabled"]
+                       else "État : désactivée")        # l'état réel arrive aussitôt du module Discord
 
         def close():
             self._discord_status_var = None

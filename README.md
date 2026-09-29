@@ -68,6 +68,12 @@ Un petit livre de test, `exemple.epub`, est fourni.
 - Le message « SoX could not be found » affiché au démarrage est sans conséquence.
 - La progression et les réglages sont enregistrés dans `~/.voixlivre.json`.
 
+## Conditions et confidentialité
+
+- [Conditions d'utilisation](CONDITIONS.md)
+- [Politique de confidentialité](CONFIDENTIALITE.md) — tout reste sur votre ordinateur ; seule
+  l'activité Discord, si vous l'activez, est partagée.
+
 ## Crédits
 
 - Polices [Archivo](https://github.com/Omnibus-Type/Archivo) et [Literata](https://github.com/googlefonts/literata),
