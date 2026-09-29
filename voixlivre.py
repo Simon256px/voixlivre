@@ -634,6 +634,7 @@ class DiscordPresence:
     def _set_status(self, status):
         if status != self.status:
             self.status = status
+            print(f"[Discord {time.strftime('%H:%M:%S')}] {status}", flush=True)   # → ~/.voixlivre.log
             self.on_status(status)
 
     @staticmethod
@@ -699,6 +700,8 @@ class DiscordPresence:
                     rpc, retry_at = None, now + 20
                     self._set_status(self._explain(exc))
                     continue
+            if wanted is None and not last_sent:
+                sent = None                      # rien d'affiché : inutile d'effacer (et d'attendre 15 s)
             if wanted != sent and now - last_sent >= self.INTERVAL:
                 try:
                     if wanted is None:
@@ -706,6 +709,9 @@ class DiscordPresence:
                     else:
                         rpc.update(**wanted)
                     sent, last_sent = wanted, now
+                    shown = "effacée" if wanted is None else " / ".join(
+                        str(wanted[k]) for k in ("details", "state") if wanted.get(k)) or "(sans texte)"
+                    print(f"[Discord {time.strftime('%H:%M:%S')}] activité envoyée : {shown}", flush=True)
                     self._set_status("connectée")
                 except Exception as exc:  # noqa: BLE001 — Discord fermé entre-temps
                     self._disconnect(rpc)
@@ -1672,6 +1678,8 @@ class App:
             values = self._discord_values()
             details = discord_text(s["line1"], values)
             state = discord_text(s["line2"], values)
+            if not details and not state:        # lignes laissées vides : jamais une activité muette
+                details = discord_text(s.get("private_text", ""), {}) or "Écoute un livre"
             if paused:
                 state = discord_text(f"{state or ''} · en pause", {}) if state else "En pause"
         else:
