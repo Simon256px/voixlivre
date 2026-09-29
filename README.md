@@ -14,8 +14,12 @@ polices Archivo et Literata, noir, gris nuage, papier et orange.
 - **Bibliothèque** au démarrage : couverture, titre, auteur, progression et date de dernière lecture
   de chaque livre, rouvert en un clic à son marque-page
 - **Mode jour / nuit** (bouton ☾ / ☀), mémorisé
-- **Images et notes de l'ebook** affichées à leur place (jamais lues) : appel de note cliquable en
-  orange, qui ouvre la note ; liste des notes en fin de chapitre
+- **Images et notes de l'ebook** affichées à leur place (jamais lues) : aperçu de la note au survol
+  de l'appel, façon Obsidian (épinglé au clic) ; liste des notes en fin de chapitre
+- **Activité Discord** (« Écoute VoixLivre ») : titre, auteur, progression, temps écoulé et bouton
+  vers ce dépôt, textes personnalisables (bouton « Discord »). Il suffit de créer une application
+  sur [discord.com/developers/applications](https://discord.com/developers/applications) nommée
+  « VoixLivre » et d'en coller l'« Application ID » dans les réglages.
 - **Passage lu toujours au milieu** de la page, **surlignage** personnel par livre et **marque-page**
   posé automatiquement là où l'on s'arrête
 

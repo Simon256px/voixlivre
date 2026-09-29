@@ -17,6 +17,7 @@ import numpy as np
 import sounddevice as sd
 
 MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice"
+GITHUB_URL = "https://github.com/Simon256px/voixlivre"
 CLONE_MODEL_ID = "Qwen/Qwen3-TTS-12Hz-1.7B-Base"         # pour les voix clonées du dossier voix/
 VOICES_DIR = Path(__file__).resolve().parent / "voix"
 MAX_REF_SECONDS = 20                                       # extrait de référence d'une voix clonée
@@ -574,6 +575,142 @@ def add_cloned_voice(name, audio_path, text):
     (VOICES_DIR / "voix.json").write_text(json.dumps(entries, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+# ---------------------------------------------------------------- activité Discord
+
+ICON_URL = "https://raw.githubusercontent.com/Simon256px/voixlivre/main/assets/icon.png"
+DISCORD_DEFAULTS = {
+    "enabled": False,
+    "client_id": "",                             # « Application ID » créé sur discord.com/developers
+    "line1": "« {titre} »",
+    "line2": "{auteur} · {progression} %",
+    "idle": "Choisit un livre dans sa bibliothèque",
+    "show_button": True,
+    "button_label": "VoixLivre sur GitHub",
+    "button_url": GITHUB_URL,
+}
+DISCORD_FIELDS = "{titre} {auteur} {chapitre} {progression} {voix}"
+
+
+class _Fields(dict):
+    def __missing__(self, key):                  # champ inconnu : laissé tel quel, sans erreur
+        return "{" + key + "}"
+
+
+def discord_text(template, values):
+    """Remplit un modèle (« Écoute {titre} ») ; Discord veut 2 à 128 caractères, sinon None."""
+    try:
+        text = re.sub(r"\s+", " ", template.format_map(_Fields(values))).strip()
+    except (ValueError, IndexError):             # accolade mal fermée : texte brut
+        text = re.sub(r"\s+", " ", template).strip()
+    if len(text) > 128:
+        text = text[:127] + "…"
+    return text if len(text) >= 2 else None
+
+
+class DiscordPresence:
+    """Activité Discord (« Rich Presence ») dans un fil à part : ne bloque jamais l'interface,
+    se reconnecte seule si Discord est fermé puis rouvert, regroupe les mises à jour."""
+
+    INTERVAL = 15                                # Discord accepte environ une mise à jour toutes les 15 s
+
+    def __init__(self, on_status):
+        self.on_status = on_status
+        self.status = "désactivée"
+        self.queue = queue.Queue()
+        threading.Thread(target=self._run, daemon=True).start()
+
+    def configure(self, client_id, enabled):
+        self.queue.put(("config", (str(client_id).strip(), bool(enabled))))
+
+    def update(self, activity):
+        """activity : paramètres de pypresence.Presence.update, ou None pour effacer l'activité."""
+        self.queue.put(("activity", activity))
+
+    def close(self):
+        self.queue.put(("quit", None))
+
+    def _set_status(self, status):
+        if status != self.status:
+            self.status = status
+            self.on_status(status)
+
+    @staticmethod
+    def _explain(exc):
+        name = type(exc).__name__
+        if name in ("DiscordNotFound", "FileNotFoundError", "ConnectionRefusedError"):
+            return "Discord n'est pas ouvert"
+        if name in ("InvalidID", "InvalidPipe") or "client_id" in str(exc).lower() or "4000" in str(exc):
+            return "identifiant d'application refusé par Discord"
+        if name in ("PipeClosed", "BrokenPipeError", "ConnectionResetError"):
+            return "connexion à Discord perdue, nouvel essai…"
+        return f"erreur Discord : {exc}"[:120]
+
+    def _disconnect(self, rpc):
+        if rpc is not None:
+            for action in (rpc.clear, rpc.close):
+                try:
+                    action()
+                except Exception:  # noqa: BLE001 — Discord déjà fermé
+                    pass
+
+    def _run(self):
+        import asyncio
+
+        asyncio.set_event_loop(asyncio.new_event_loop())      # pypresence a besoin d'une boucle par fil
+        rpc, client_id, enabled = None, "", False
+        wanted, sent, last_sent, retry_at = None, object(), 0.0, 0.0
+        while True:
+            try:
+                kind, data = self.queue.get(timeout=1)
+            except queue.Empty:
+                kind = data = None
+            if kind == "quit":
+                self._disconnect(rpc)
+                return
+            if kind == "config":
+                new_id, enabled = data
+                if new_id != client_id or not enabled:
+                    self._disconnect(rpc)
+                    rpc, sent, retry_at = None, object(), 0.0
+                client_id = new_id
+            elif kind == "activity":
+                wanted = data
+            if not enabled:
+                self._set_status("désactivée")
+                continue
+            if not client_id:
+                self._set_status("identifiant d'application manquant")
+                continue
+            now = time.time()
+            if rpc is None:
+                if now < retry_at:
+                    continue
+                try:
+                    from pypresence import Presence
+
+                    rpc = Presence(client_id)
+                    rpc.connect()
+                    sent, last_sent = object(), 0.0
+                    self._set_status("connectée")
+                except Exception as exc:  # noqa: BLE001 — Discord absent ou identifiant faux
+                    self._disconnect(rpc)
+                    rpc, retry_at = None, now + 20
+                    self._set_status(self._explain(exc))
+                    continue
+            if wanted != sent and now - last_sent >= self.INTERVAL:
+                try:
+                    if wanted is None:
+                        rpc.clear()
+                    else:
+                        rpc.update(**wanted)
+                    sent, last_sent = wanted, now
+                    self._set_status("connectée")
+                except Exception as exc:  # noqa: BLE001 — Discord fermé entre-temps
+                    self._disconnect(rpc)
+                    rpc, retry_at = None, now + 20
+                    self._set_status(self._explain(exc))
+
+
 class _Aborted(Exception):
     """Levée dans le modèle pour interrompre une génération devenue inutile."""
 
@@ -875,10 +1012,14 @@ ON_ACCENT = "#010101"       # texte posé sur l'orange ou le jaune : toujours no
 # PAPER = page du livre, MARKER = surlignage personnel (violet MontLivre éclairci ou assombri).
 THEMES = {
     "jour": {"COAL": "#000000", "ASH": "#a0a0a0", "CLOUD": "#e1e1e1", "PAPER": "#f2f0ea",
-             "MUTED": "#5c5c5c", "INK": "#16130f", "MARKER": "#dcc4ff"},
+             "MUTED": "#5c5c5c", "INK": "#16130f", "MARKER": "#dcc4ff",
+             "POP": "#fbfaf7", "POPLINE": "#c9c6bf", "CALLOUT": "#fbe3d1"},
     "nuit": {"COAL": "#e8e6e1", "ASH": "#5e5e5e", "CLOUD": "#141414", "PAPER": "#1d1c19",
-             "MUTED": "#a3a3a3", "INK": "#e6e1d6", "MARKER": "#4a2d78"},
+             "MUTED": "#a3a3a3", "INK": "#e6e1d6", "MARKER": "#4a2d78",
+             "POP": "#262626", "POPLINE": "#3d3d3d", "CALLOUT": "#35251a"},
 }
+# POP, POPLINE, CALLOUT : fond, bordure et encadré de l'aperçu des notes (façon Obsidian)
+POP, POPLINE, CALLOUT = THEMES["jour"]["POP"], THEMES["jour"]["POPLINE"], THEMES["jour"]["CALLOUT"]
 THEME = "jour"
 COAL, ASH, CLOUD, PAPER, MUTED, INK, MARKER = (THEMES["jour"][k] for k in
                                                ("COAL", "ASH", "CLOUD", "PAPER", "MUTED", "INK", "MARKER"))
@@ -998,6 +1139,13 @@ class App:
         self._scroll_job = None
         self.progress = self._load_progress()
         set_theme(self.progress.get("_theme", "jour"))      # mode jour/nuit mémorisé
+        saved = self.progress.get("_discord")
+        self.discord_settings = {**DISCORD_DEFAULTS, **(saved if isinstance(saved, dict) else {})}
+        self.discord = DiscordPresence(lambda status: self.ui_q.put(("discord", status)))
+        self.discord.configure(self.discord_settings["client_id"], self.discord_settings["enabled"])
+        self._listen_start = None                 # début de l'écoute en cours (temps écoulé sur Discord)
+        self._discord_window = None
+        self._discord_status_var = None
 
         root.title("VoixLivre")
         root.geometry("1180x800")
@@ -1064,6 +1212,8 @@ class App:
         self.btn_theme = FlatButton(brand, "☾" if THEME == "jour" else "☀", self.toggle_theme, "ghost",
                                     f["symbol"], width=2, pady=2)
         self.btn_theme.pack(side="right", padx=(10, 0))
+        FlatButton(brand, _track("Discord"), self.open_discord_settings, "ghost", f["button"]).pack(
+            side="right", padx=(10, 0))
         FlatButton(brand, _track("Ajouter une voix"), self.add_voice, "ghost", f["button"]).pack(side="right")
         self.btn_library = FlatButton(brand, _track("Bibliothèque"), self.toggle_library, "ghost", f["button"])
         self.btn_library.pack(side="left", padx=(24, 0))
@@ -1189,10 +1339,12 @@ class App:
                                 lmargin1=0, lmargin2=18)
         self.text.tag_configure("notes_label", foreground=OCHRE)
         self.text.tag_bind("noteref", "<Button-1>", self.show_note)
-        self.text.tag_bind("noteref", "<Enter>", lambda e: self.text.configure(cursor="hand2"))
-        self.text.tag_bind("noteref", "<Leave>", lambda e: self.text.configure(cursor="xterm"))
+        self.text.tag_bind("noteref", "<Enter>", self._note_hover_enter)     # aperçu au survol
+        self.text.tag_bind("noteref", "<Leave>", self._note_hover_leave)
         self.text.tag_raise("noteref", "current")
         self.book_notes, self.book_images, self._chapter_images, self.note_popup = {}, {}, [], None
+        self._note_show_job = self._note_hide_job = self._note_shown = None
+        self._note_pinned = False
         root.bind("<Button-1>", self.close_note, add="+")        # un clic ailleurs ferme la note
         self.text.tag_raise("current", "marker")        # le passage lu reste visible sur un surlignage
         self.text.tag_raise("sel")
@@ -1321,6 +1473,7 @@ class App:
         self.title_var.set("BIBLIOTHÈQUE")
         self.btn_library.configure(text=_track("Retour à la lecture") if self.chapters else _track("Bibliothèque"))
         self._refresh_library()
+        self._update_discord()
 
     def show_reader(self):
         self.library_mode = False
@@ -1328,6 +1481,7 @@ class App:
         self.reader_view.pack(fill="both", expand=True)
         self.title_var.set(self.book_title)
         self.btn_library.configure(text=_track("Bibliothèque"))
+        self._update_discord()
         self.root.after_idle(lambda: self._highlight(*self.current, animate=False) if self.chapters else None)
 
     def _library_books(self):
@@ -1481,6 +1635,166 @@ class App:
         done = sum(len(c) for c in chunks[:ch]) + idx
         return 100 * done // max(sum(len(c) for c in chunks), 1)
 
+    # -- activité Discord
+    def _discord_values(self):
+        """Champs utilisables dans les textes de l'activité : {titre} {auteur} {chapitre} {progression} {voix}."""
+        entry = self.library.get(self.book_path, {}) if self.book_path else {}
+        ch = self.current[0] if self.chapters else 0
+        return {"titre": entry.get("title") or self.book_title.title(),
+                "auteur": entry.get("author") or "auteur inconnu",
+                "chapitre": f"{ch + 1}/{len(self.chapters)}" if self.chapters else "",
+                "progression": self._book_percent(),
+                "voix": self.speaker_var.get()}
+
+    def _discord_activity(self, settings=None):
+        """Paramètres de l'activité Discord selon l'état de la lecture, ou None pour l'effacer."""
+        s = settings or self.discord_settings
+        if not s["enabled"]:
+            return None
+        try:
+            from pypresence.types import ActivityType
+            listening = ActivityType.LISTENING               # « Écoute VoixLivre »
+        except ImportError:
+            listening = None
+        reading = bool(self.chapters) and not self.library_mode or self.playing
+        if reading:
+            values = self._discord_values()
+            details = discord_text(s["line1"], values)
+            state = discord_text(s["line2"], values)
+            if self.paused or not self.playing:
+                state = discord_text(f"{state or ''} · en pause", {}) if state else "En pause"
+        else:
+            details, state = discord_text(s["idle"], {}), None
+        activity = {"large_image": ICON_URL, "large_text": "VoixLivre — lecture à voix haute"}
+        if listening is not None:
+            activity["activity_type"] = listening
+        if details:
+            activity["details"] = details
+        if state:
+            activity["state"] = state
+        if self.playing and not self.paused and self._listen_start:
+            activity["start"] = self._listen_start
+        label, url = s["button_label"].strip()[:32], s["button_url"].strip()
+        if s["show_button"] and len(label) >= 1 and re.match(r"^https?://\S+\.\S+", url):
+            activity["buttons"] = [{"label": label, "url": url}]
+        return activity
+
+    def _update_discord(self):
+        if self.discord_settings["enabled"]:
+            self.discord.update(self._discord_activity())
+
+    def open_discord_settings(self):
+        if self._discord_window is not None and self._discord_window.winfo_exists():
+            self._discord_window.lift()
+            return
+        import webbrowser
+
+        f, s = self.fonts, dict(self.discord_settings)
+        win = self._discord_window = tk.Toplevel(self.root, bg=CLOUD, padx=28, pady=22)
+        win.title("Activité Discord")
+        win.transient(self.root)
+        win.resizable(False, False)
+        if self._icons:
+            win.iconphoto(False, self._icons[0])
+        small = lambda parent, text, **kw: tk.Label(parent, text=_track(text), font=f["small"], bg=CLOUD,
+                                                     fg=kw.pop("fg", MUTED), anchor="w", **kw)
+        tk.Label(win, text="ACTIVITÉ DISCORD", font=(f["title"][0], 20), bg=CLOUD, fg=COAL,
+                 anchor="w").pack(fill="x")
+        tk.Frame(win, bg=COAL, height=2).pack(fill="x", pady=(6, 14))
+
+        enabled = tk.BooleanVar(value=s["enabled"])
+        show_button = tk.BooleanVar(value=s["show_button"])
+        check = lambda parent, text, var: tk.Checkbutton(
+            parent, text=text, variable=var, font=f["ui"], bg=CLOUD, fg=COAL, activebackground=CLOUD,
+            activeforeground=COAL, selectcolor=PAPER, anchor="w", highlightthickness=0, bd=0)
+        check(win, "Afficher sur mon profil Discord ce que j'écoute", enabled).pack(fill="x")
+
+        fields = {}
+
+        def field(key, label, hint=""):
+            small(win, label).pack(fill="x", pady=(12, 4))
+            var = tk.StringVar(value=s[key])
+            entry = tk.Entry(win, textvariable=var, font=f["ui"], bg=PAPER, fg=INK, insertbackground=INK,
+                             relief="flat", highlightthickness=2, highlightbackground=COAL,
+                             highlightcolor=OCHRE, width=58)
+            entry.pack(fill="x", ipady=5)
+            if hint:
+                tk.Label(win, text=hint, font=(f["ui"][0], 8), bg=CLOUD, fg=MUTED, anchor="w",
+                         justify="left").pack(fill="x", pady=(3, 0))
+            fields[key] = var
+            var.trace_add("write", lambda *_: refresh())
+
+        field("client_id", "Identifiant de l'application Discord (Application ID)")
+        help_link = tk.Label(win, text="Comment l'obtenir : discord.com/developers/applications → New Application "
+                             "→ nommez-la « VoixLivre » → copiez l'Application ID.  ↗",
+                             font=(f["ui"][0], 8), bg=CLOUD, fg=OCHRE, cursor="hand2", anchor="w",
+                             justify="left", wraplength=520)
+        help_link.pack(fill="x", pady=(3, 0))
+        help_link.bind("<Button-1>", lambda e: webbrowser.open("https://discord.com/developers/applications"))
+        field("line1", "Ligne 1 pendant l'écoute", f"Champs possibles : {DISCORD_FIELDS}")
+        field("line2", "Ligne 2 pendant l'écoute")
+        field("idle", "Texte quand aucun livre n'est ouvert")
+        small(win, "Bouton sur le profil").pack(fill="x", pady=(14, 2))
+        check(win, "Afficher un bouton lien", show_button).pack(fill="x")
+        field("button_label", "Texte du bouton (32 caractères max.)")
+        field("button_url", "Lien du bouton")
+
+        # aperçu, comme sur un profil Discord
+        small(win, "Aperçu").pack(fill="x", pady=(16, 4))
+        card = tk.Frame(win, bg=COAL, padx=2, pady=2)
+        card.pack(fill="x")
+        inner = tk.Frame(card, bg=PAPER, padx=14, pady=10)
+        inner.pack(fill="x")
+        preview = tk.StringVar()
+        tk.Label(inner, textvariable=preview, font=f["ui"], bg=PAPER, fg=INK, justify="left",
+                 anchor="w").pack(fill="x")
+        status = self._discord_status_var = tk.StringVar()
+
+        def current_settings():
+            out = dict(s)
+            out.update({k: v.get() for k, v in fields.items()})
+            out["enabled"], out["show_button"] = enabled.get(), show_button.get()
+            return out
+
+        def refresh():
+            cs = current_settings()
+            act = self._discord_activity({**cs, "enabled": True}) or {}
+            lines = ["ÉCOUTE VOIXLIVRE", act.get("details", ""), act.get("state", "")]
+            if act.get("start"):
+                lines.append("00:42 écoulées")
+            if act.get("buttons"):
+                lines.append(f"[ {act['buttons'][0]['label']} ]")
+            preview.set("\n".join(line for line in lines if line))
+
+        refresh()
+        enabled.trace_add("write", lambda *_: refresh())
+        show_button.trace_add("write", lambda *_: refresh())
+        status.set(f"État : {self.discord.status}")
+        tk.Label(win, textvariable=status, font=(f["ui"][0], 9), bg=CLOUD, fg=MUTED, anchor="w").pack(
+            fill="x", pady=(12, 0))
+
+        def save():
+            self.discord_settings = current_settings()
+            self.progress["_discord"] = self.discord_settings
+            self._save_progress()
+            self.discord.configure(self.discord_settings["client_id"], self.discord_settings["enabled"])
+            self._update_discord()
+            if not self.discord_settings["enabled"]:
+                self.discord.update(None)
+            status.set("État : enregistré — connexion…" if self.discord_settings["enabled"]
+                       else "État : désactivée")
+
+        def close():
+            self._discord_status_var = None
+            win.destroy()
+
+        buttons = tk.Frame(win, bg=CLOUD)
+        buttons.pack(fill="x", pady=(16, 0))
+        FlatButton(buttons, _track("Enregistrer"), save, "solid", f["button"]).pack(side="right")
+        FlatButton(buttons, _track("Fermer"), close, "ghost", f["button"]).pack(side="right", padx=(0, 10))
+        win.protocol("WM_DELETE_WINDOW", close)
+        win.bind("<Escape>", lambda e: close())
+
     # -- mode jour / nuit
     _COLOR_OPTIONS = ("background", "foreground", "highlightbackground", "highlightcolor",
                       "selectbackground", "selectforeground", "inactiveselectbackground",
@@ -1625,6 +1939,7 @@ class App:
         if (ch, idx) != (0, 0):
             self.status_var.set(f"Reprise au marque-page : « {chapters[ch][0]} ».")
         self._save_progress()
+        self._update_discord()
         return True
 
     def _valid_pos(self, pos):
@@ -1729,43 +2044,157 @@ class App:
                 return int(name[4:])
         return None
 
+    # aperçu des notes façon Obsidian : au survol (après un court délai) ou au clic (épinglé)
+    _SUPERSCRIPT = str.maketrans("0123456789*", "⁰¹²³⁴⁵⁶⁷⁸⁹*")
+    _POP_KEY = "#fe01fe"                       # couleur rendue transparente : coins arrondis
+
+    def _note_context(self, key):
+        """La phrase du livre qui appelle la note, appel en exposant, pour l'encadré de l'aperçu."""
+        for chunk, _ in self.narrator.chunks[self.displayed_chapter or 0] if self.chapters else []:
+            mark = f"{NOTE_OPEN}{key}{NOTE_CLOSE}"
+            at = chunk.find(mark)
+            if at < 0:
+                continue
+            start = max((chunk.rfind(p, 0, at) for p in ". ! ? … ".split(" ") if p), default=-1)
+            start = start + 1 if start >= 0 else 0
+            ends = [chunk.find(p, at + len(mark)) for p in (".", "!", "?", "…")]
+            end = min([e for e in ends if e >= 0], default=len(chunk) - 1) + 1
+            before, after = chunk[start:at], chunk[at + len(mark):end]
+            label = self.book_notes[key][0].translate(self._SUPERSCRIPT)
+            tail = speakable(after)
+            sep = "" if not tail or re.match(r"^[,.;:!?)»…]", tail) else " "
+            sentence = speakable(before) + label + sep + tail
+            if len(sentence) > 240:            # phrase très longue : on garde les abords de l'appel
+                pos = sentence.find(label)
+                sentence = "…" + sentence[max(pos - 150, 0):pos + len(label) + 70].strip() + "…"
+            return sentence.strip()
+        return ""
+
+    def _note_hover_enter(self, event):
+        self.text.configure(cursor="hand2")
+        self._cancel_note_jobs()
+        key = self._note_at(self.text.index(f"@{event.x},{event.y}"))
+        if key is None or (self.note_popup is not None and self._note_shown == key):
+            return
+        self._note_show_job = self.root.after(350, lambda: self._open_note(key, pinned=False))
+
+    def _note_hover_leave(self, event=None):
+        self.text.configure(cursor="xterm")
+        if self._note_show_job:
+            self.root.after_cancel(self._note_show_job)
+            self._note_show_job = None
+        self._schedule_note_hide()
+
+    def _schedule_note_hide(self):
+        if self.note_popup is not None and not self._note_pinned:
+            if self._note_hide_job:
+                self.root.after_cancel(self._note_hide_job)
+            self._note_hide_job = self.root.after(300, self.close_note)
+
+    def _cancel_note_jobs(self):
+        for name in ("_note_show_job", "_note_hide_job"):
+            job = getattr(self, name, None)
+            if job:
+                self.root.after_cancel(job)
+            setattr(self, name, None)
+
     def show_note(self, event):
+        """Clic sur un appel de note : aperçu épinglé (fermé par un clic ailleurs ou Échap)."""
         key = self._note_at(self.text.index(f"@{event.x},{event.y}"))
         if key is None or key not in self.book_notes:
             return
+        self._cancel_note_jobs()
+        self._open_note(key, pinned=True)
+        return "break"
+
+    def _open_note(self, key, pinned):
+        self._note_show_job = None
+        if key not in self.book_notes or self.displayed_chapter is None:
+            return
         self.close_note()
+        self._note_shown, self._note_pinned = key, pinned
         label, body = self.book_notes[key]
-        f = self.fonts
-        pop = self.note_popup = tk.Toplevel(self.root, bg=COAL, padx=2, pady=2)
+        if len(body) > 900:
+            body = body[:880].rsplit(" ", 1)[0] + " … (suite dans les notes en fin de chapitre)"
+        f, width = self.fonts, 420
+        pop = self.note_popup = tk.Toplevel(self.root, bg=self._POP_KEY)
         pop.overrideredirect(True)
         pop.transient(self.root)               # toujours au-dessus de la fenêtre de lecture
         pop.attributes("-topmost", True)
-        inner = tk.Frame(pop, bg=PAPER, padx=16, pady=12)
-        inner.pack(fill="both", expand=True)
-        head = tk.Frame(inner, bg=PAPER)
-        head.pack(fill="x")
-        tk.Label(head, text=_track(f"Note {label}"), font=f["small"], bg=PAPER, fg=OCHRE).pack(side="left")
-        close = tk.Label(head, text="✕", font=f["ui"], bg=PAPER, fg=MUTED, cursor="hand2")
-        close.pack(side="right")
-        close.bind("<Button-1>", lambda e: self.close_note())
-        tk.Label(inner, text=body, font=(f["text"][0], 11), bg=PAPER, fg=INK, wraplength=440,
-                 justify="left", anchor="w").pack(anchor="w", pady=(8, 0))
+        try:
+            pop.attributes("-transparentcolor", self._POP_KEY)
+        except tk.TclError:
+            pass
+        canvas = tk.Canvas(pop, bg=self._POP_KEY, highlightthickness=0, bd=0)
+        canvas.pack(fill="both", expand=True)
+        box = tk.Frame(canvas, bg=POP)
+
+        # en-tête discret (comme « › Propriétés »), puis grand titre
+        chapter = self.chapters[self.displayed_chapter][0]
+        tk.Label(box, text=f"›   {chapter[:48]}", font=(f["ui"][0], 9), bg=POP, fg=MUTED,
+                 anchor="w").pack(fill="x")
+        tk.Label(box, text=f"Note {label}", font=(f["big"][0], 17), bg=POP, fg=INK,
+                 anchor="w").pack(fill="x", pady=(10, 10))
+        # encadré (callout) : la phrase qui appelle la note
+        context = self._note_context(key)
+        if context:
+            callout = tk.Frame(box, bg=CALLOUT, padx=14, pady=10)
+            callout.pack(fill="x", pady=(0, 12))
+            tk.Label(callout, text="❝  Dans le texte", font=(f["button"][0], 9, "bold"), bg=CALLOUT,
+                     fg=OCHRE, anchor="w").pack(fill="x")
+            tk.Label(callout, text=context, font=(f["text"][0], 10), bg=CALLOUT, fg=INK, wraplength=width - 28,
+                     justify="left", anchor="w").pack(fill="x", pady=(6, 0))
+        tk.Label(box, text=body, font=(f["text"][0], 11), bg=POP, fg=INK, wraplength=width,
+                 justify="left", anchor="w").pack(fill="x")
+
+        # carte aux coins arrondis dessinée derrière le contenu
+        box.update_idletasks()
+        pad, radius = 18, 10
+        w, h = max(box.winfo_reqwidth(), width) + 2 * pad, box.winfo_reqheight() + 2 * pad
+        canvas.configure(width=w, height=h)
+        self._rounded_rect(canvas, 1, 1, w - 2, h - 2, radius, fill=POP, outline=POPLINE)
+        canvas.create_window(pad, pad, window=box, anchor="nw", width=w - 2 * pad)
+
+        # sous l'appel de note, ou au-dessus s'il n'y a pas la place
+        t = self.text
+        ranges = t.tag_ranges(f"note{key}")
+        bb = t.bbox(ranges[0]) if ranges else None
+        ax = t.winfo_rootx() + (bb[0] if bb else 40)
+        ay = t.winfo_rooty() + (bb[1] + bb[3] if bb else 40)
+        x = min(max(ax - 30, 8), pop.winfo_screenwidth() - w - 8)
+        y = ay + 8
+        if y + h > pop.winfo_screenheight() - 48:
+            y = max(ay - (bb[3] if bb else 0) - h - 8, 8)
+        pop.geometry(f"{w}x{h}+{x}+{y}")
+        # sans lift(), Windows ouvre la bulle derrière la fenêtre principale : elle resterait invisible
         pop.update_idletasks()
-        # près de l'appel de note, sans sortir de l'écran
-        x = min(event.x_root + 12, pop.winfo_screenwidth() - pop.winfo_reqwidth() - 12)
-        y = event.y_root + 18
-        if y + pop.winfo_reqheight() > pop.winfo_screenheight() - 40:
-            y = event.y_root - pop.winfo_reqheight() - 12
-        pop.geometry(f"+{max(x, 0)}+{max(y, 0)}")
+        pop.lift()
+        for widget in [pop, canvas, box] + list(box.winfo_children()):
+            widget.bind("<Enter>", lambda e: self._cancel_note_jobs(), add="+")
+            widget.bind("<Leave>", lambda e: self._schedule_note_hide(), add="+")
         pop.bind("<Escape>", lambda e: self.close_note())
-        pop.focus_set()
-        return "break"
+        if pinned:
+            pop.focus_set()
+
+    @staticmethod
+    def _rounded_rect(canvas, x1, y1, x2, y2, r, **kw):
+        points = [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2, y2 - r, x2, y2, x2 - r, y2, x1 + r, y2,
+                  x1, y2, x1, y2 - r, x1, y1 + r, x1, y1]
+        return canvas.create_polygon(points, smooth=True, **kw)
 
     def close_note(self, event=None):
+        for name in ("_note_show_job", "_note_hide_job"):
+            job = getattr(self, name, None)
+            if job:
+                try:
+                    self.root.after_cancel(job)
+                except tk.TclError:
+                    pass
+            setattr(self, name, None)
         pop = getattr(self, "note_popup", None)
         if pop is not None and pop.winfo_exists():
             pop.destroy()
-        self.note_popup = None
+        self.note_popup, self._note_shown, self._note_pinned = None, None, False
 
     # -- défilement : le passage lu reste au milieu de la page
     def _center(self, start, end, animate=True):
@@ -1925,6 +2354,9 @@ class App:
             self.status_var.set("En pause — marque-page posé" if self.paused else "Lecture")
             if self.paused:
                 self._set_bookmark()
+            else:
+                self._listen_start = int(time.time())
+            self._update_discord()
 
     def jump(self, ch, idx):
         if not self._ready():
@@ -1934,6 +2366,8 @@ class App:
         self.playing, self.paused = True, False
         self.btn_play.configure(text="⏸")
         self.narrator.play(ch, idx)
+        self._listen_start = int(time.time())
+        self._update_discord()
 
     def play_chapter(self):
         sel = self.chap_list.curselection()
@@ -1944,6 +2378,7 @@ class App:
         self.narrator.stop()
         self.playing = self.paused = False
         self.btn_play.configure(text="▶")
+        self._update_discord()
 
     def next_chunk(self):
         if self.chapters:
@@ -1989,6 +2424,8 @@ class App:
                                  "instruct": "" if cloned else self.instruct_var.get()})
         self.stat_vars["voice"].set(self.speaker_var.get())
         self._preload_voice()
+        if hasattr(self, "library"):             # (pas pendant la construction de la fenêtre)
+            self._update_discord()
 
     def add_voice(self):
         from tkinter import simpledialog
@@ -2045,6 +2482,12 @@ class App:
                     self.status_var.set(f"Lecture — {self.chapters[ch][0]}  "
                                         f"({data[1] + 1}/{len(self.narrator.chunks[ch])})")
                     self._save_progress()
+                    self._update_discord()
+                elif kind == "discord":
+                    if self._discord_status_var is not None:
+                        self._discord_status_var.set(f"État : {data}")
+                    if data == "connectée" and self.discord_settings["enabled"]:
+                        self._update_discord()
                 elif kind == "voice_ready":
                     if not self.playing:
                         self.status_var.set(f"Voix « {data} » prête — appuyez sur ▶")
@@ -2096,6 +2539,7 @@ class App:
             self._apply_voice()
         self.narrator.stop()
         self.close_note()
+        self.discord.close()                      # efface l'activité sur Discord
         if self.book_path:
             self._set_bookmark()
         self._save_progress()
