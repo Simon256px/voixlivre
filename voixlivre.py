@@ -384,6 +384,89 @@ def _best_cut(sentence):
     return hi
 
 
+# ---------------------------------------------------------------- dictionnaire
+
+DICT_DIR = Path(__file__).resolve().parent / "dictionnaires"
+DICO_TYPES = {"concept": "Concept", "mot": "Mot", "personne": "Personne", "oeuvre": "Œuvre",
+              "evenement": "Événement", "lieu": "Lieu"}
+_LETTER = "A-Za-zÀ-ÖØ-öø-ÿŒœÆæ"
+
+
+class Dictionary:
+    """Dictionnaire d'un livre (fichier JSON de dictionnaires/) : retrouve ses termes dans le texte."""
+
+    def __init__(self, data):
+        self.entries = [e for e in data.get("entrees", []) if e.get("terme") and e.get("formes")]
+        exact, lower, alternatives = {}, {}, []
+        for i, e in enumerate(self.entries):
+            for form in e["formes"]:
+                form = form.strip()
+                if not form:
+                    continue
+                if any(c.isupper() for c in form):     # nom propre : la casse compte
+                    exact.setdefault(form, i)
+                    alternatives.append((len(form), re.escape(form)))
+                else:                                  # mot courant : majuscule de début de phrase acceptée
+                    lower.setdefault(form.lower(), i)
+                    alternatives.append((len(form), f"(?i:{re.escape(form)})"))
+        self._exact, self._lower = exact, lower
+        # les formes les plus longues d'abord : « Augustin Berque » l'emporte sur « Augustin »
+        alternatives.sort(key=lambda a: -a[0])
+        body = "|".join(a[1] for a in alternatives) or "(?!)"
+        self._regex = re.compile(rf"(?<![{_LETTER}])(?:{body})(?![{_LETTER}])")
+
+    def find(self, text):
+        """[(début, fin, numéro d'entrée)] des termes présents dans `text`."""
+        found = []
+        for m in self._regex.finditer(text):
+            word = m.group(0)
+            idx = self._exact.get(word, self._lower.get(word.lower()))
+            if idx is not None:
+                found.append((m.start(), m.end(), idx))
+        return found
+
+
+def _norm_title(text):
+    import unicodedata
+
+    text = unicodedata.normalize("NFKD", text.lower())
+    return re.sub(r"[^a-z0-9]+", " ", "".join(c for c in text if not unicodedata.combining(c))).strip()
+
+
+def find_dictionary(book_path, title=""):
+    """Dictionnaire préparé pour ce livre : reconnu par l'empreinte du fichier, sinon par son titre."""
+    files = sorted(DICT_DIR.glob("*.json")) if DICT_DIR.is_dir() else []
+    if not files:
+        return None
+    candidates = []
+    for f in files:
+        try:
+            candidates.append(json.loads(f.read_text(encoding="utf-8")))
+        except (OSError, ValueError):
+            continue
+    sha = None
+    if any(c.get("livre", {}).get("sha1") for c in candidates):
+        try:
+            import hashlib
+
+            digest = hashlib.sha1()
+            with open(book_path, "rb") as fh:
+                for block in iter(lambda: fh.read(1 << 20), b""):
+                    digest.update(block)
+            sha = digest.hexdigest()
+        except OSError:
+            sha = None
+    for data in candidates:
+        if sha and sha in data.get("livre", {}).get("sha1", []):
+            return Dictionary(data)
+    wanted = _norm_title(title)
+    for data in candidates:                            # même livre sous un autre format (PDF…)
+        known = _norm_title(data.get("livre", {}).get("titre", ""))
+        if known and wanted.startswith(known):
+            return Dictionary(data)
+    return None
+
+
 # ---------------------------------------------------------------- bibliothèque
 
 COVERS_DIR = Path.home() / ".voixlivre" / "couvertures"
@@ -1385,12 +1468,16 @@ class App:
                                    padx=10, pady=3)
         self.btn_mark.pack(side="left", padx=(0, 8))
         self.btn_mark.state(["disabled"])
-        self.btn_bookmark = FlatButton(tools, _track("Aller au marque-page"), self.goto_bookmark, "ghost",
+        self.btn_bookmark = FlatButton(tools, _track("Marque-page"), self.goto_bookmark, "ghost",
                                        f["small"], padx=10, pady=3)
         self.btn_bookmark.pack(side="left")
         self.btn_bookmark.state(["disabled"])
+        self.btn_dico = FlatButton(tools, _track("Dictionnaire"), self.toggle_dico, "ghost", f["small"],
+                                   padx=10, pady=3)
+        self.btn_dico.pack(side="left", padx=(8, 0))
         holder = tk.Frame(body, bg=CLOUD)
         holder.grid(row=1, column=1, sticky="nsew")
+        self._build_dico(body)
         tk.Frame(holder, bg=COAL).place(x=8, y=8, relwidth=1, relheight=1, width=-8, height=-8)  # ombre
         card = tk.Frame(holder, bg=COAL, padx=2, pady=2)
         card.place(x=0, y=0, relwidth=1, relheight=1, width=-8, height=-8)
@@ -1422,6 +1509,11 @@ class App:
         self.text.tag_bind("noteref", "<Enter>", self._note_hover_enter)     # aperçu au survol
         self.text.tag_bind("noteref", "<Leave>", self._note_hover_leave)
         self.text.tag_raise("noteref", "current")
+        # mots du dictionnaire : soulignés en vert Moss, définition au survol, épinglée au clic
+        self.text.tag_configure("dico", underline=True, underlinefg=MOSS)
+        self.text.tag_bind("dico", "<Enter>", lambda e: self._dico_hover_enter(e))
+        self.text.tag_bind("dico", "<Leave>", lambda e: self._note_hover_leave(e))
+        self.text.tag_bind("dico", "<Button-1>", lambda e: self.show_dico(e))
         self.book_notes, self.book_images, self._chapter_images, self.note_popup = {}, {}, [], None
         self._note_show_job = self._note_hide_job = self._note_shown = None
         self._note_pinned = False
@@ -1916,6 +2008,7 @@ class App:
         self.text.tag_configure("notes_head", foreground=MUTED)
         self.text.tag_configure("notes", foreground=MUTED)
         self.close_note()
+        self._render_dico(force=True)          # cartes du dictionnaire aux couleurs du mode
         self.btn_theme.configure(text="☾" if THEME == "jour" else "☀")
         self._repaint_buttons(self.root)
         self._mark_bookmark_chapter()
@@ -2016,6 +2109,7 @@ class App:
         self.close_note()
         self.narrator.load([split_chunks(text) for _, text in chapters])
         entry = self._library_add(self.book_path, opened=True, save=False)
+        self._load_dico()                      # dictionnaire préparé pour ce livre (empreinte ou titre)
         title = entry["title"]
         self.book_title = title.upper()[:44] + ("…" if len(title) > 44 else "")
         if not self.library_mode:
@@ -2064,13 +2158,14 @@ class App:
         t.configure(state="normal")
         t.delete("1.0", "end")
         self._chapter_images = []              # garde les images affichées en mémoire (sinon Tk les efface)
+        self._chunk_terms = {}                 # segment -> termes du dictionnaire qu'il contient
         notes_here = []
         for i, (chunk, end_para) in enumerate(self.narrator.chunks[ch]):
             tag = f"c{i}"
-            pos = 0
+            pos, terms = 0, []
             for m in _MEDIA.finditer(chunk):   # appels de note et images : affichés, jamais lus
                 if chunk[pos:m.start()]:
-                    t.insert("end", chunk[pos:m.start()], (tag,))
+                    self._insert_with_terms(chunk[pos:m.start()], (tag,), terms)
                 if m.group(1):
                     key = int(m.group(1))
                     if key in self.book_notes:
@@ -2079,7 +2174,9 @@ class App:
                 else:
                     self._insert_image(int(m.group(2)), tag)
                 pos = m.end()
-            t.insert("end", chunk[pos:] + ("\n\n" if end_para else " "), (tag,))
+            self._insert_with_terms(chunk[pos:], (tag,), terms)
+            t.insert("end", "\n\n" if end_para else " ", (tag,))
+            self._chunk_terms[i] = list(dict.fromkeys(terms))
             t.tag_bind(tag, "<Double-Button-1>", lambda e, c=ch, j=i: self.jump(c, j))
         if notes_here:                         # notes du chapitre, en fin de page (non lues)
             t.insert("end", "\n" + _track("Notes du chapitre") + "\n", ("notes_head",))
@@ -2106,6 +2203,7 @@ class App:
                 self.text.tag_remove("current", a, b)
             self._center(ranges[0], ranges[-1], animate)
         self._update_stats(ch, idx)
+        self._dico_follow(idx)
 
     # -- images et notes de l'ebook (affichées, jamais lues)
     def _insert_image(self, key, tag):
@@ -2173,7 +2271,7 @@ class App:
         self.text.configure(cursor="hand2")
         self._cancel_note_jobs()
         key = self._note_at(self.text.index(f"@{event.x},{event.y}"))
-        if key is None or (self.note_popup is not None and self._note_shown == key):
+        if key is None or (self.note_popup is not None and self._note_shown == ("note", key)):
             return
         self._note_show_job = self.root.after(350, lambda: self._open_note(key, pinned=False))
 
@@ -2206,15 +2304,24 @@ class App:
         self._open_note(key, pinned=True)
         return "break"
 
+    # -- bulle façon Obsidian, commune aux notes et au dictionnaire
     def _open_note(self, key, pinned):
         self._note_show_job = None
         if key not in self.book_notes or self.displayed_chapter is None:
             return
-        self.close_note()
-        self._note_shown, self._note_pinned = key, pinned
         label, body = self.book_notes[key]
         if len(body) > 900:
             body = body[:880].rsplit(" ", 1)[0] + " … (suite dans les notes en fin de chapitre)"
+        ranges = self.text.tag_ranges(f"note{key}")
+        chapter = self.chapters[self.displayed_chapter][0]
+        self._popover(ranges[0] if ranges else None, f"›   {chapter[:48]}", f"Note {label}",
+                      "❝  Dans le texte", self._note_context(key), body, pinned, ("note", key))
+
+    def _popover(self, anchor, crumb, title, callout_label, callout_text, body, pinned, shown):
+        """Carte arrondie près de `anchor` (index du texte) : fil d'Ariane, titre, encadré, texte."""
+        self.close_note()
+        self._note_shown, self._note_pinned = shown, pinned
+        self._popover_opened = time.time()     # le clic qui l'ouvre ne doit pas la refermer aussitôt
         f, width = self.fonts, 420
         pop = self.note_popup = tk.Toplevel(self.root, bg=self._POP_KEY)
         pop.overrideredirect(True)
@@ -2227,24 +2334,19 @@ class App:
         canvas = tk.Canvas(pop, bg=self._POP_KEY, highlightthickness=0, bd=0)
         canvas.pack(fill="both", expand=True)
         box = tk.Frame(canvas, bg=POP)
-
-        # en-tête discret (comme « › Propriétés »), puis grand titre
-        chapter = self.chapters[self.displayed_chapter][0]
-        tk.Label(box, text=f"›   {chapter[:48]}", font=(f["ui"][0], 9), bg=POP, fg=MUTED,
-                 anchor="w").pack(fill="x")
-        tk.Label(box, text=f"Note {label}", font=(f["big"][0], 17), bg=POP, fg=INK,
-                 anchor="w").pack(fill="x", pady=(10, 10))
-        # encadré (callout) : la phrase qui appelle la note
-        context = self._note_context(key)
-        if context:
+        tk.Label(box, text=crumb, font=(f["ui"][0], 9), bg=POP, fg=MUTED, anchor="w").pack(fill="x")
+        tk.Label(box, text=title, font=(f["big"][0], 17), bg=POP, fg=INK, anchor="w", justify="left",
+                 wraplength=width).pack(fill="x", pady=(10, 10))
+        if callout_text:
             callout = tk.Frame(box, bg=CALLOUT, padx=14, pady=10)
             callout.pack(fill="x", pady=(0, 12))
-            tk.Label(callout, text="❝  Dans le texte", font=(f["button"][0], 9, "bold"), bg=CALLOUT,
+            tk.Label(callout, text=callout_label, font=(f["button"][0], 9, "bold"), bg=CALLOUT,
                      fg=OCHRE, anchor="w").pack(fill="x")
-            tk.Label(callout, text=context, font=(f["text"][0], 10), bg=CALLOUT, fg=INK, wraplength=width - 28,
-                     justify="left", anchor="w").pack(fill="x", pady=(6, 0))
-        tk.Label(box, text=body, font=(f["text"][0], 11), bg=POP, fg=INK, wraplength=width,
-                 justify="left", anchor="w").pack(fill="x")
+            tk.Label(callout, text=callout_text, font=(f["text"][0], 10), bg=CALLOUT, fg=INK,
+                     wraplength=width - 28, justify="left", anchor="w").pack(fill="x", pady=(6, 0))
+        if body:
+            tk.Label(box, text=body, font=(f["text"][0], 11), bg=POP, fg=INK, wraplength=width,
+                     justify="left", anchor="w").pack(fill="x")
 
         # carte aux coins arrondis dessinée derrière le contenu
         box.update_idletasks()
@@ -2254,10 +2356,9 @@ class App:
         self._rounded_rect(canvas, 1, 1, w - 2, h - 2, radius, fill=POP, outline=POPLINE)
         canvas.create_window(pad, pad, window=box, anchor="nw", width=w - 2 * pad)
 
-        # sous l'appel de note, ou au-dessus s'il n'y a pas la place
+        # sous le mot, ou au-dessus s'il n'y a pas la place
         t = self.text
-        ranges = t.tag_ranges(f"note{key}")
-        bb = t.bbox(ranges[0]) if ranges else None
+        bb = t.bbox(anchor) if anchor is not None else None
         ax = t.winfo_rootx() + (bb[0] if bb else 40)
         ay = t.winfo_rooty() + (bb[1] + bb[3] if bb else 40)
         x = min(max(ax - 30, 8), pop.winfo_screenwidth() - w - 8)
@@ -2275,6 +2376,186 @@ class App:
         if pinned:
             pop.focus_set()
 
+    # -- dictionnaire : panneau à droite qui suit la lecture, mots soulignés dans le texte
+    DICO_WIDTH = 290
+    DICO_MAX = 30                               # cartes gardées dans le panneau
+
+    def _build_dico(self, body):
+        f = self.fonts
+        self.dico, self._dico_history, self._dico_open, self._chunk_terms = None, [], set(), {}
+        self._dico_rendered = None
+        self._dico_header = tk.Label(body, text=_track("Dictionnaire"), font=f["small"], bg=CLOUD, fg=MUTED,
+                                     anchor="w")
+        self._dico_header.grid(row=0, column=2, sticky="w", padx=(22, 0), pady=(0, 6))
+        col = self.dico_col = tk.Frame(body, bg=COAL, padx=2, pady=2)
+        col.grid(row=1, column=2, sticky="ns", padx=(22, 0), pady=(0, 8))
+        inner = tk.Frame(col, bg=CLOUD)
+        inner.pack(fill="both", expand=True)
+        self.dico_canvas = tk.Canvas(inner, bg=CLOUD, highlightthickness=0, bd=0, width=self.DICO_WIDTH)
+        scroll = ttk.Scrollbar(inner, command=self.dico_canvas.yview)
+        self.dico_canvas.configure(yscrollcommand=scroll.set)
+        scroll.pack(side="right", fill="y")
+        self.dico_canvas.pack(side="left", fill="both", expand=True)
+        self.dico_list = tk.Frame(self.dico_canvas, bg=CLOUD, padx=8, pady=8)
+        self.dico_canvas.create_window(0, 0, window=self.dico_list, anchor="nw", width=self.DICO_WIDTH)
+        self.dico_list.bind("<Configure>", lambda e: self.dico_canvas.configure(
+            scrollregion=self.dico_canvas.bbox("all")))
+        wheel = lambda e: self.dico_canvas.yview_scroll(-1 if e.delta > 0 else 1, "units")
+        self.dico_canvas.bind("<Enter>", lambda e: self.root.bind_all("<MouseWheel>", wheel))
+        self.dico_canvas.bind("<Leave>", lambda e: self.root.unbind_all("<MouseWheel>"))
+        self.dico_visible = bool(self.progress.get("_dico_panel", True))
+        if not self.dico_visible:
+            self._dico_header.grid_remove()
+            col.grid_remove()
+        self._render_dico(force=True)
+
+    def toggle_dico(self):
+        self.dico_visible = not self.dico_visible
+        if self.dico_visible:
+            self._dico_header.grid()
+            self.dico_col.grid()
+            self._render_dico(force=True)
+        else:
+            self._dico_header.grid_remove()
+            self.dico_col.grid_remove()
+        self.progress["_dico_panel"] = self.dico_visible
+        self._save_progress()
+        self.root.after_idle(lambda: self._highlight(*self.current, animate=False) if self.chapters else None)
+
+    def _load_dico(self):
+        entry = self.library.get(self.book_path, {}) if self.book_path else {}
+        try:
+            self.dico = find_dictionary(self.book_path, entry.get("title", ""))
+        except Exception:  # noqa: BLE001 — dictionnaire illisible : on lit sans
+            self.dico = None
+        self._dico_history, self._dico_open, self._dico_rendered = [], set(), None
+        n = len(self.dico.entries) if self.dico else 0
+        self._dico_header.configure(text=_track(f"Dictionnaire · {n} mots" if n else "Dictionnaire"))
+        self._render_dico(force=True)
+
+    def _insert_with_terms(self, text, tags, terms):
+        """Insère `text` en soulignant les termes du dictionnaire (notés dans `terms`)."""
+        t = self.text
+        if not self.dico:
+            t.insert("end", text, tags)
+            return
+        pos = 0
+        for start, end, idx in self.dico.find(text):
+            if start > pos:
+                t.insert("end", text[pos:start], tags)
+            t.insert("end", text[start:end], tags + ("dico", f"dico{idx}"))
+            terms.append(idx)
+            pos = end
+        if pos < len(text):
+            t.insert("end", text[pos:], tags)
+
+    def _dico_follow(self, idx):
+        """Les termes du passage lu remontent en tête du panneau."""
+        if not self.dico:
+            return
+        current = self._chunk_terms.get(idx, [])
+        for eid in reversed(current):
+            if eid in self._dico_history:
+                self._dico_history.remove(eid)
+            self._dico_history.insert(0, eid)
+        del self._dico_history[self.DICO_MAX:]
+        self._dico_current = set(current)
+        self._render_dico()
+
+    def _render_dico(self, force=False):
+        if not getattr(self, "dico_visible", False):
+            return
+        current = getattr(self, "_dico_current", set())
+        state = (tuple(self._dico_history), frozenset(current), frozenset(self._dico_open), THEME)
+        if state == self._dico_rendered and not force:
+            return
+        self._dico_rendered = state
+        for child in self.dico_list.winfo_children():
+            child.destroy()
+        f, wrap = self.fonts, self.DICO_WIDTH - 44
+        if not self.dico:
+            msg = ("Pas de dictionnaire pour ce livre.\n\nLes définitions sont rédigées à l’avance par "
+                   "Claude puis enregistrées dans le dossier « dictionnaires » : demandez-le pour ce livre."
+                   if self.chapters else "Ouvrez un livre : les mots difficiles du passage lu s’afficheront ici.")
+            tk.Label(self.dico_list, text=msg, font=f["ui"], bg=CLOUD, fg=MUTED, wraplength=wrap + 10,
+                     justify="left", anchor="w").pack(fill="x")
+            return
+        if not self._dico_history:
+            tk.Label(self.dico_list, text="Les mots difficiles du passage lu s’afficheront ici, avec leur "
+                     "définition. Cliquez sur une définition pour la lire en entier.", font=f["ui"], bg=CLOUD,
+                     fg=MUTED, wraplength=wrap + 10, justify="left", anchor="w").pack(fill="x")
+            return
+        for eid in self._dico_history:
+            e = self.dico.entries[eid]
+            live = eid in current
+            card = tk.Frame(self.dico_list, bg=MOSS if live else COAL, padx=0, pady=0)
+            card.pack(fill="x", pady=(0, 8))
+            if live:                            # barre verte : mot du passage en cours de lecture
+                tk.Frame(card, bg=MOSS, width=4).pack(side="left", fill="y")
+            box = tk.Frame(card, bg=PAPER if live else CLOUD, padx=10, pady=8, cursor="hand2")
+            box.pack(side="left", fill="both", expand=True, padx=(0 if live else 1, 1), pady=1)
+            head = tk.Frame(box, bg=box["bg"])
+            head.pack(fill="x")
+            tk.Label(head, text=e["terme"], font=(f["button"][0], 10, "bold"), bg=box["bg"], fg=INK,
+                     anchor="w", justify="left", wraplength=wrap - 70).pack(side="left")
+            tk.Label(head, text=_track(DICO_TYPES.get(e.get("type"), "")), font=(f["small"][0], 7, "bold"),
+                     bg=box["bg"], fg=MOSS if live else MUTED).pack(side="right", anchor="n")
+            tk.Label(box, text=e["court"], font=(f["ui"][0], 9), bg=box["bg"], fg=INK, wraplength=wrap,
+                     justify="left", anchor="w").pack(fill="x", pady=(4, 0))
+            opened = eid in self._dico_open
+            if opened:
+                tk.Frame(box, bg=POPLINE, height=1).pack(fill="x", pady=8)
+                tk.Label(box, text=e["long"], font=(f["text"][0], 10), bg=box["bg"], fg=INK, wraplength=wrap,
+                         justify="left", anchor="w").pack(fill="x")
+            tk.Label(box, text=_track("▾ Réduire" if opened else "▸ Lire la suite"),
+                     font=(f["small"][0], 7, "bold"), bg=box["bg"], fg=OCHRE, anchor="w").pack(fill="x", pady=(6, 0))
+
+            def toggle(event=None, eid=eid):
+                self._dico_open.symmetric_difference_update({eid})
+                self._render_dico()
+
+            for widget in [box, head] + list(box.winfo_children()) + list(head.winfo_children()):
+                widget.bind("<Button-1>", toggle)
+        self.dico_canvas.yview_moveto(0)
+
+    def _dico_at(self, index):
+        for name in self.text.tag_names(index):
+            if re.fullmatch(r"dico\d+", name):
+                return int(name[4:])
+        return None
+
+    def _dico_hover_enter(self, event):
+        self.text.configure(cursor="hand2")
+        self._cancel_note_jobs()
+        index = self.text.index(f"@{event.x},{event.y}")
+        eid = self._dico_at(index)
+        if eid is None or (self.note_popup is not None and self._note_shown == ("dico", eid)):
+            return
+        self._note_show_job = self.root.after(350, lambda: self._open_dico(eid, index, pinned=False))
+
+    def show_dico(self, event):
+        """Clic sur un mot souligné : définition épinglée, et carte dépliée en tête du panneau."""
+        index = self.text.index(f"@{event.x},{event.y}")
+        eid = self._dico_at(index)
+        if eid is None or not self.dico:
+            return
+        self._cancel_note_jobs()
+        if eid in self._dico_history:
+            self._dico_history.remove(eid)
+        self._dico_history.insert(0, eid)
+        self._dico_open.add(eid)
+        self._render_dico()
+        self._open_dico(eid, index, pinned=True)
+        return "break"
+
+    def _open_dico(self, eid, index, pinned):
+        self._note_show_job = None
+        if not self.dico or eid >= len(self.dico.entries):
+            return
+        e = self.dico.entries[eid]
+        crumb = f"›   Dictionnaire · {DICO_TYPES.get(e.get('type'), '')}"
+        self._popover(index, crumb, e["terme"], "✦  En bref", e["court"], e["long"], pinned, ("dico", eid))
+
     @staticmethod
     def _rounded_rect(canvas, x1, y1, x2, y2, r, **kw):
         points = [x1 + r, y1, x2 - r, y1, x2, y1, x2, y1 + r, x2, y2 - r, x2, y2, x2 - r, y2, x1 + r, y2,
@@ -2282,6 +2563,8 @@ class App:
         return canvas.create_polygon(points, smooth=True, **kw)
 
     def close_note(self, event=None):
+        if event is not None and time.time() - getattr(self, "_popover_opened", 0) < 0.4:
+            return                             # c'est le clic qui vient d'ouvrir la bulle
         for name in ("_note_show_job", "_note_hide_job"):
             job = getattr(self, name, None)
             if job:
