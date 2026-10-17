@@ -29,6 +29,10 @@ abonnement, aucun envoi de vos livres sur Internet.
 - Lecture continue sans blanc et sauts instantanés, grâce à une génération par lots mise en cache
 - Images et notes de l'ebook affichées à leur place, jamais lues : aperçu de la note au survol de
   l'appel (épinglé au clic), liste des notes en fin de chapitre
+- Dictionnaire qui suit la lecture : panneau à droite avec la définition courte des mots difficiles
+  du passage lu (concepts, mots savants, personnes, œuvres, lieux), la définition longue au clic ;
+  mots soulignés en vert dans le texte, définition au survol. Les dictionnaires sont rédigés à
+  l'avance, un fichier par livre dans `dictionnaires/`
 
 **Bibliothèque**
 
