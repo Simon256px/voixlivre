@@ -1569,9 +1569,7 @@ class App:
             scrollregion=self.library_canvas.bbox("all")))
         self.library_canvas.bind("<Configure>", lambda e: self._layout_library())
         # molette : seulement quand la souris survole la bibliothèque
-        wheel = lambda e: self.library_canvas.yview_scroll(-1 if e.delta > 0 else 1, "units")
-        self.library_canvas.bind("<Enter>", lambda e: root.bind_all("<MouseWheel>", wheel))
-        self.library_canvas.bind("<Leave>", lambda e: root.unbind_all("<MouseWheel>"))
+        self.library_canvas.configure(yscrollincrement=24)       # molette : voir App._on_wheel
         self.library_menu = tk.Menu(root, tearoff=0, bg=PAPER, fg=COAL, activebackground=COAL,
                                     activeforeground=CLOUD, font=f["ui"], bd=1, relief="solid")
         self.library_mode = False
@@ -2392,7 +2390,7 @@ class App:
         inner = tk.Frame(col, bg=CLOUD)
         inner.pack(fill="both", expand=True)
         self.dico_canvas = tk.Canvas(inner, bg=CLOUD, highlightthickness=0, bd=0, width=self.DICO_WIDTH)
-        scroll = ttk.Scrollbar(inner, command=self.dico_canvas.yview)
+        scroll = ttk.Scrollbar(inner, command=self._dico_scrollbar)
         self.dico_canvas.configure(yscrollcommand=scroll.set)
         scroll.pack(side="right", fill="y")
         self.dico_canvas.pack(side="left", fill="both", expand=True)
@@ -2400,9 +2398,8 @@ class App:
         self.dico_canvas.create_window(0, 0, window=self.dico_list, anchor="nw", width=self.DICO_WIDTH)
         self.dico_list.bind("<Configure>", lambda e: self.dico_canvas.configure(
             scrollregion=self.dico_canvas.bbox("all")))
-        wheel = lambda e: self.dico_canvas.yview_scroll(-1 if e.delta > 0 else 1, "units")
-        self.dico_canvas.bind("<Enter>", lambda e: self.root.bind_all("<MouseWheel>", wheel))
-        self.dico_canvas.bind("<Leave>", lambda e: self.root.unbind_all("<MouseWheel>"))
+        self.dico_canvas.configure(yscrollincrement=24)
+        self.root.bind_all("<MouseWheel>", self._on_wheel, add="+")   # molette : panneau sous la souris
         self.dico_visible = bool(self.progress.get("_dico_panel", True))
         if not self.dico_visible:
             self._dico_header.grid_remove()
@@ -2462,7 +2459,29 @@ class App:
         self._dico_current = set(current)
         self._render_dico()
 
+    def _on_wheel(self, event):
+        """Molette : fait défiler le panneau (dictionnaire, bibliothèque) qui est sous la souris.
+        Un seul gestionnaire global : survoler une carte ne coupe plus le défilement."""
+        widget = self.root.winfo_containing(event.x_root, event.y_root)
+        targets = {self.dico_canvas: self.dico_canvas, self.library_canvas: self.library_canvas}
+        while widget is not None and widget not in targets:
+            widget = getattr(widget, "master", None)
+        if widget is None:
+            return
+        canvas = targets[widget]
+        if canvas.yview() == (0.0, 1.0):        # tout tient dans la hauteur : rien à faire défiler
+            return
+        canvas.yview_scroll(-1 if event.delta > 0 else 1, "units")
+        if canvas is self.dico_canvas:
+            self._dico_scrolled = time.time()
+
+    def _dico_scrollbar(self, *args):
+        self.dico_canvas.yview(*args)
+        self._dico_scrolled = time.time()
+
     def _render_dico(self, force=False):
+        """Cartes du panneau : conservées d'un passage à l'autre (seulement restylées et réordonnées),
+        pour éviter le clignotement ; reconstruites seulement si elles sont dépliées ou repliées."""
         if not getattr(self, "dico_visible", False):
             return
         current = getattr(self, "_dico_current", set())
@@ -2470,53 +2489,115 @@ class App:
         if state == self._dico_rendered and not force:
             return
         self._dico_rendered = state
-        for child in self.dico_list.winfo_children():
-            child.destroy()
-        f, wrap = self.fonts, self.DICO_WIDTH - 44
+        cards = self.__dict__.setdefault("_dico_cards", {})
+        if force:                                # changement de thème ou de livre : tout reconstruire
+            for card in cards.values():
+                card["frame"].destroy()
+            cards.clear()
+        message = None
         if not self.dico:
-            msg = ("Pas de dictionnaire pour ce livre.\n\nLes définitions sont rédigées à l’avance par "
-                   "Claude puis enregistrées dans le dossier « dictionnaires » : demandez-le pour ce livre."
-                   if self.chapters else "Ouvrez un livre : les mots difficiles du passage lu s’afficheront ici.")
-            tk.Label(self.dico_list, text=msg, font=f["ui"], bg=CLOUD, fg=MUTED, wraplength=wrap + 10,
-                     justify="left", anchor="w").pack(fill="x")
+            message = ("Pas de dictionnaire pour ce livre.\n\nLes définitions sont rédigées à l’avance par "
+                       "Claude puis enregistrées dans le dossier « dictionnaires » : demandez-le pour ce livre."
+                       if self.chapters else "Ouvrez un livre : les mots difficiles du passage lu s’afficheront ici.")
+        elif not self._dico_history:
+            message = ("Les mots difficiles du passage lu s’afficheront ici, avec leur définition. "
+                       "Cliquez sur une définition pour la lire en entier.")
+        msg = getattr(self, "_dico_msg", None)
+        if message:
+            for card in cards.values():
+                card["frame"].destroy()
+            cards.clear()
+            if msg is None or not msg.winfo_exists():
+                msg = self._dico_msg = tk.Label(self.dico_list, font=self.fonts["ui"], bg=CLOUD, fg=MUTED,
+                                                wraplength=self.DICO_WIDTH - 34, justify="left", anchor="w")
+            msg.configure(text=message, bg=CLOUD, fg=MUTED)
+            msg.pack(fill="x")
             return
-        if not self._dico_history:
-            tk.Label(self.dico_list, text="Les mots difficiles du passage lu s’afficheront ici, avec leur "
-                     "définition. Cliquez sur une définition pour la lire en entier.", font=f["ui"], bg=CLOUD,
-                     fg=MUTED, wraplength=wrap + 10, justify="left", anchor="w").pack(fill="x")
-            return
-        for eid in self._dico_history:
-            e = self.dico.entries[eid]
-            live = eid in current
-            card = tk.Frame(self.dico_list, bg=MOSS if live else COAL, padx=0, pady=0)
-            card.pack(fill="x", pady=(0, 8))
-            if live:                            # barre verte : mot du passage en cours de lecture
-                tk.Frame(card, bg=MOSS, width=4).pack(side="left", fill="y")
-            box = tk.Frame(card, bg=PAPER if live else CLOUD, padx=10, pady=8, cursor="hand2")
-            box.pack(side="left", fill="both", expand=True, padx=(0 if live else 1, 1), pady=1)
-            head = tk.Frame(box, bg=box["bg"])
-            head.pack(fill="x")
-            tk.Label(head, text=e["terme"], font=(f["button"][0], 10, "bold"), bg=box["bg"], fg=INK,
-                     anchor="w", justify="left", wraplength=wrap - 70).pack(side="left")
-            tk.Label(head, text=_track(DICO_TYPES.get(e.get("type"), "")), font=(f["small"][0], 7, "bold"),
-                     bg=box["bg"], fg=MOSS if live else MUTED).pack(side="right", anchor="n")
-            tk.Label(box, text=e["court"], font=(f["ui"][0], 9), bg=box["bg"], fg=INK, wraplength=wrap,
-                     justify="left", anchor="w").pack(fill="x", pady=(4, 0))
+        if msg is not None and msg.winfo_exists():
+            msg.pack_forget()
+        wanted = list(self._dico_history)
+        for eid in [e for e in cards if e not in wanted]:
+            cards.pop(eid)["frame"].destroy()
+        top_before = (getattr(self, "_dico_order", None) or [None])[:1]
+        created = False
+        for eid in wanted:
             opened = eid in self._dico_open
-            if opened:
-                tk.Frame(box, bg=POPLINE, height=1).pack(fill="x", pady=8)
-                tk.Label(box, text=e["long"], font=(f["text"][0], 10), bg=box["bg"], fg=INK, wraplength=wrap,
-                         justify="left", anchor="w").pack(fill="x")
-            tk.Label(box, text=_track("▾ Réduire" if opened else "▸ Lire la suite"),
-                     font=(f["small"][0], 7, "bold"), bg=box["bg"], fg=OCHRE, anchor="w").pack(fill="x", pady=(6, 0))
+            if eid in cards and cards[eid]["opened"] != opened:
+                cards.pop(eid)["frame"].destroy()          # dépliée / repliée : on la refait
+            if eid not in cards:
+                cards[eid] = self._make_dico_card(eid, opened)
+                created = True
+            self._style_dico_card(cards[eid], eid in current)
+        # réordonner sans rien détruire ; une carte (re)faite doit aussi reprendre sa place
+        if created or getattr(self, "_dico_order", None) != wanted:
+            for eid in wanted:
+                cards[eid]["frame"].pack_forget()
+            for eid in wanted:
+                cards[eid]["frame"].pack(fill="x", pady=(0, 8))
+            self._dico_order = wanted
+        # nouveaux mots en tête : on y remonte, sauf si l'on vient de faire défiler le panneau
+        if wanted[:1] != top_before and time.time() - getattr(self, "_dico_scrolled", 0) > 8:
+            self.dico_canvas.yview_moveto(0)
 
-            def toggle(event=None, eid=eid):
-                self._dico_open.symmetric_difference_update({eid})
-                self._render_dico()
+    def _make_dico_card(self, eid, opened):
+        f, wrap = self.fonts, self.DICO_WIDTH - 44
+        e = self.dico.entries[eid]
+        frame = tk.Frame(self.dico_list, bg=COAL)
+        bar = tk.Frame(frame, bg=MOSS, width=4)
+        box = tk.Frame(frame, bg=CLOUD, padx=10, pady=8, cursor="hand2")
+        box.pack(side="left", fill="both", expand=True, padx=1, pady=1)
+        head = tk.Frame(box, bg=CLOUD)
+        head.pack(fill="x")
+        tk.Label(head, text=e["terme"], font=(f["button"][0], 10, "bold"), bg=CLOUD, fg=INK,
+                 anchor="w", justify="left", wraplength=wrap - 70).pack(side="left")
+        kind = tk.Label(head, text=_track(DICO_TYPES.get(e.get("type"), "")), font=(f["small"][0], 7, "bold"),
+                        bg=CLOUD, fg=MUTED)
+        kind.pack(side="right", anchor="n")
+        tk.Label(box, text=e["court"], font=(f["ui"][0], 9), bg=CLOUD, fg=INK, wraplength=wrap,
+                 justify="left", anchor="w").pack(fill="x", pady=(4, 0))
+        line = None
+        if opened:
+            line = tk.Frame(box, bg=POPLINE, height=1)
+            line.pack(fill="x", pady=8)
+            tk.Label(box, text=e["long"], font=(f["text"][0], 10), bg=CLOUD, fg=INK, wraplength=wrap,
+                     justify="left", anchor="w").pack(fill="x")
+        more = tk.Label(box, text=_track("▾ Réduire" if opened else "▸ Lire la suite"),
+                        font=(f["small"][0], 7, "bold"), bg=CLOUD, fg=OCHRE, anchor="w")
+        more.pack(fill="x", pady=(6, 0))
 
-            for widget in [box, head] + list(box.winfo_children()) + list(head.winfo_children()):
+        def toggle(event=None, eid=eid):
+            self._dico_open.symmetric_difference_update({eid})
+            self._dico_scrolled = time.time()            # on reste sur la carte cliquée
+            self._render_dico()
+
+        for widget in [box, head] + list(box.winfo_children()) + list(head.winfo_children()):
+            if widget is not line:
                 widget.bind("<Button-1>", toggle)
-        self.dico_canvas.yview_moveto(0)
+        return {"frame": frame, "bar": bar, "box": box, "kind": kind, "line": line, "opened": opened,
+                "live": None}
+
+    def _style_dico_card(self, card, live):
+        """Carte du passage en cours : fond papier et barre verte ; sinon fond gris, bordure fine."""
+        if card["live"] == live:
+            return
+        card["live"] = live
+        bg = PAPER if live else CLOUD
+        card["frame"].configure(bg=MOSS if live else COAL)
+        if live:
+            card["bar"].pack(side="left", fill="y", before=card["box"])
+            card["box"].pack_configure(padx=(0, 1))
+        else:
+            card["bar"].pack_forget()
+            card["box"].pack_configure(padx=1)
+
+        def paint(widget):
+            if widget is not card["line"]:
+                widget.configure(bg=bg)
+            for child in widget.winfo_children():
+                paint(child)
+
+        paint(card["box"])
+        card["kind"].configure(fg=MOSS if live else MUTED)
 
     def _dico_at(self, index):
         for name in self.text.tag_names(index):

@@ -1,5 +1,5 @@
 {
- "version": 1,
+ "version": 2,
  "livre": {
   "titre": "La leçon de Greta Thunberg",
   "auteur": "Bernard Stiegler",
@@ -13,6 +13,24 @@
  "redige_par": "Claude (Anthropic), octobre 2026 — définitions originales, sans extrait du livre",
  "entrees": [
   {
+   "terme": "Abbau",
+   "type": "concept",
+   "formes": [
+    "Abbau"
+   ],
+   "court": "Mot allemand : démontage, déconstruction ; employé par Heidegger, origine de la « déconstruction » de Derrida.",
+   "long": "Heidegger parle d’Abbau ou de Destruktion de la métaphysique : démonter les concepts hérités pour retrouver les expériences qui les ont fondés. Derrida a traduit et transformé cette idée en déconstruction."
+  },
+  {
+   "terme": "Abgrund",
+   "type": "concept",
+   "formes": [
+    "Abgrund"
+   ],
+   "court": "Mot allemand : l’abîme, l’absence de fond ; chez Heidegger, l’absence de fondement ultime.",
+   "long": "Heidegger joue sur Grund (fond, fondement) et Abgrund (abîme) : l’être n’a pas de fondement dernier, il est à la fois fond et abîme."
+  },
+  {
    "terme": "Accidentalité",
    "type": "concept",
    "formes": [
@@ -22,6 +40,17 @@
    "long": "Paul Virilio répétait qu’« inventer le navire, c’est inventer le naufrage » : chaque technique porte en elle sa catastrophe spécifique. L’accident généralisé serait celui d’un système mondial interconnecté."
   },
   {
+   "terme": "Accélérationnisme",
+   "type": "concept",
+   "formes": [
+    "accélérationnisme",
+    "accélérationniste",
+    "accélérationnistes"
+   ],
+   "court": "Courant qui veut accélérer les dynamiques du capitalisme et de la technique pour les dépasser.",
+   "long": "Inspiré de lectures de Deleuze et Guattari et de Nick Land, l’accélérationnisme se décline en versions de gauche (Nick Srnicek, Alex Williams) et de droite. Il parie sur la poussée technique plutôt que sur le ralentissement."
+  },
+  {
    "terme": "Agencement",
    "type": "concept",
    "formes": [
@@ -29,7 +58,8 @@
     "agencements",
     "agencer",
     "agencent",
-    "agencé"
+    "agencé",
+    "réagençant"
    ],
    "court": "Chez Deleuze et Guattari, combinaison d’éléments hétérogènes (humains, techniques, signes) qui fonctionne ensemble.",
    "long": "Au-delà du sens courant d’arrangement, Deleuze et Guattari ont fait de l’agencement un concept : une machine, une société ou un désir sont des assemblages d’éléments disparates qui produisent des effets ensemble."
@@ -46,6 +76,52 @@
    "long": "Dans le « Protagoras » de Platon, Prométhée a donné aux humains le feu et les techniques, mais ils s’entretuent faute de savoir vivre ensemble. Zeus leur envoie alors aidôs, le sens de la honte et du respect, et dikè, la justice. Stiegler y voit l’idée que la technique ne suffit pas : il faut des savoirs et des règles pour la rendre vivable."
   },
   {
+   "terme": "Akkumulation",
+   "type": "concept",
+   "formes": [
+    "Akkumulation",
+    "ursprüngliche",
+    "ursprüngliche Akkumulation",
+    "accumulation primitive"
+   ],
+   "court": "Chez Marx, l’« accumulation primitive » : la dépossession violente qui a permis la naissance du capitalisme.",
+   "long": "Marx appelle ursprüngliche Akkumulation l’expropriation des paysans (enclosures), la colonisation et le pillage, qui ont concentré les richesses et créé une main-d’œuvre sans autre ressource que son travail."
+  },
+  {
+   "terme": "Allagmatique",
+   "type": "concept",
+   "formes": [
+    "allagmatique",
+    "allagmatiques"
+   ],
+   "court": "Chez Simondon, la théorie des opérations et des échanges qui transforment les êtres.",
+   "long": "Du grec allagma (échange). Gilbert Simondon appelle allagmatique l’étude des opérations (et non des structures) par lesquelles un système se transforme : une science générale du devenir, complémentaire de l’étude des formes stables."
+  },
+  {
+   "terme": "Alètheia",
+   "type": "concept",
+   "formes": [
+    "aletheia",
+    "alètheia",
+    "alêtheia"
+   ],
+   "court": "Mot grec traduit par vérité, que Heidegger comprend comme « dévoilement ».",
+   "long": "Heidegger décompose a-lètheia en « sortie de l’oubli, du retrait » : la vérité n’est pas d’abord l’exactitude d’un jugement mais le fait que les choses se montrent. La technique moderne est, pour lui, un mode de ce dévoilement."
+  },
+  {
+   "terme": "Anamnèse",
+   "type": "concept",
+   "formes": [
+    "anamnèse",
+    "anamnèses",
+    "anamnésique",
+    "anamnésiques",
+    "réminiscence"
+   ],
+   "court": "Remémoration : chez Platon, le fait de retrouver en soi un savoir que l’âme possédait déjà.",
+   "long": "Dans le « Ménon », Socrate amène un jeune esclave à découvrir une vérité géométrique par ses seules questions, pour montrer qu’apprendre, c’est se ressouvenir (anamnèse ou réminiscence). Platon oppose cette mémoire vivante à l’hypomnèse, la mémoire confiée à des supports extérieurs comme l’écriture. Stiegler soutient au contraire que l’anamnèse a toujours besoin de supports hypomnésiques. En médecine, l’anamnèse est aussi l’historique des symptômes d’un patient."
+  },
+  {
    "terme": "Anankè",
    "type": "concept",
    "formes": [
@@ -56,6 +132,20 @@
    ],
    "court": "Mot grec : la nécessité, la fatalité.",
    "long": "Victor Hugo raconte, en tête de « Notre-Dame de Paris », avoir découvert ce mot gravé sur un mur de la cathédrale, ce qui lui inspira son roman. Anankè est aussi une divinité grecque de la nécessité."
+  },
+  {
+   "terme": "Animisme",
+   "type": "concept",
+   "formes": [
+    "animisme",
+    "animiste",
+    "animistes",
+    "chamanique",
+    "chamaniques",
+    "chamanisme"
+   ],
+   "court": "Croyance que les êtres naturels (animaux, plantes, rivières) ont une âme ou une intériorité.",
+   "long": "L’anthropologue Philippe Descola compte l’animisme parmi quatre grandes manières de composer le monde : humains et non-humains y partagent une intériorité semblable. Le chamane y sert d’intermédiaire avec les esprits."
   },
   {
    "terme": "Anomie",
@@ -81,13 +171,29 @@
    "long": "Néologisme de Stiegler, forgé à partir d’entropie et d’anthropos (l’humain). L’anthropie désigne la tendance des sociétés industrielles à détruire les équilibres dont elles dépendent : épuisement des ressources, pollution, mais aussi épuisement de l’attention, des savoirs et du désir. Le mot anthropique désigne plus largement ce qui est causé par l’homme."
   },
   {
+   "terme": "Anthropocentrisme",
+   "type": "concept",
+   "formes": [
+    "anthropocentrisme",
+    "anthropocentrique",
+    "anthropocentriques",
+    "anthropo-centrique",
+    "anthropocentrés",
+    "anthropo-centrer"
+   ],
+   "court": "Vision du monde qui place l’être humain au centre et fait de la nature un simple moyen à son service.",
+   "long": "L’anthropocentrisme est critiqué par l’écologie, qui rappelle que l’humain dépend des autres vivants. Stiegler refuse à la fois l’anthropocentrisme et son simple rejet : l’humain, être technique, a une responsabilité particulière dans l’Anthropocène."
+  },
+  {
    "terme": "Anthropocène",
    "type": "concept",
    "formes": [
     "Anthropocène",
     "anthropocène",
     "Anthropocene",
-    "hyper-anthropocène"
+    "hyper-anthropocène",
+    "anthropo-cène",
+    "anthropocénologues"
    ],
    "court": "Époque géologique où l’humanité est devenue la principale force qui transforme la Terre.",
    "long": "Terme popularisé en 2000 par le chimiste Paul Crutzen. Il désigne la période, commencée avec la révolution industrielle (ou après 1945 selon d’autres), où les activités humaines modifient le climat, la biodiversité et les cycles de la planète à l’échelle géologique. Stiegler y voit une ère d’accélération de l’entropie et appelle à en sortir vers un Néguanthropocène."
@@ -97,7 +203,9 @@
    "type": "concept",
    "formes": [
     "anthropos",
-    "Anthropos"
+    "Anthropos",
+    "anthropoi",
+    "thanatoi"
    ],
    "court": "Mot grec : l’être humain.",
    "long": "Anthropos est la racine d’anthropologie, anthropique, Anthropocène. Stiegler forge à partir de lui le mot anthropie (l’entropie produite par l’humain) et son contraire, néguanthropie."
@@ -115,6 +223,15 @@
    "long": "Terme employé par Stiegler en écho aux travaux des biologistes Giuseppe Longo et Maël Montévil, qui parlent d’« anti-entropie » pour décrire la manière dont les vivants produisent de l’organisation nouvelle. L’anti-anthropie est sa transposition à la vie humaine et technique."
   },
   {
+   "terme": "Apeiron",
+   "type": "concept",
+   "formes": [
+    "apeiron"
+   ],
+   "court": "Mot grec : l’illimité, l’indéterminé, principe de toutes choses selon Anaximandre.",
+   "long": "Pour Anaximandre (VIe siècle av. J.-C.), toutes choses naissent de l’apeiron et y retournent selon la nécessité. C’est l’une des premières tentatives de penser l’origine du monde sans recourir aux dieux."
+  },
+  {
    "terme": "Apocalypse",
    "type": "concept",
    "formes": [
@@ -128,10 +245,32 @@
     "apocalyptiques",
     "apocalyptisme",
     "apocalypticien",
-    "apocalypticiens"
+    "apocalypticiens",
+    "apokalyptô"
    ],
    "court": "Au sens premier, révélation ; au sens courant, catastrophe finale, fin du monde.",
    "long": "Du grec apokalupsis, dévoilement. L’Apocalypse de Jean, dernier livre de la Bible, décrit la fin des temps et le jugement divin. Le mot désigne aujourd’hui une catastrophe totale. Stiegler s’intéresse à la double signification : l’Anthropocène serait une catastrophe qui révèle aussi la vérité de notre situation. Derrida a écrit « D’un ton apocalyptique adopté naguère en philosophie »."
+  },
+  {
+   "terme": "Arbeitskraft",
+   "type": "concept",
+   "formes": [
+    "Arbeitskraft",
+    "force de travail"
+   ],
+   "court": "Chez Marx, la force de travail : la capacité de travailler que le salarié vend à l’employeur.",
+   "long": "Marx distingue le travail et la force de travail : le capitaliste achète la force de travail à sa valeur (le salaire), mais le travail fourni produit davantage de valeur, d’où la survaleur."
+  },
+  {
+   "terme": "Archi-écriture",
+   "type": "concept",
+   "formes": [
+    "archi-écriture",
+    "archi-trace",
+    "archi-traces"
+   ],
+   "court": "Chez Derrida, l’inscription et la trace qui précèdent et rendent possible toute parole et toute écriture.",
+   "long": "Derrida soutient qu’avant même l’écriture au sens courant, toute signification repose sur des traces, des différences et des renvois : c’est l’archi-écriture ou archi-trace. Stiegler en fait le point de départ de sa pensée de la technique comme mémoire extériorisée."
   },
   {
    "terme": "Aufklärung",
@@ -139,10 +278,44 @@
    "formes": [
     "Aufklärung",
     "Lumières",
-    "Enlightenment"
+    "Enlightenment",
+    "sapere",
+    "sapere aude"
    ],
    "court": "Les Lumières : mouvement intellectuel du XVIIIe siècle qui défend la raison et l’émancipation.",
    "long": "En allemand Aufklärung, en anglais Enlightenment. Kant le définit en 1784 comme « la sortie de l’homme de sa minorité », c’est-à-dire de l’incapacité à penser par soi-même ; sa devise est « Ose savoir ! » (Sapere aude). Stiegler appelle à de nouvelles Lumières face à l’Anthropocène, capables de penser la technique."
+  },
+  {
+   "terme": "Babélisation",
+   "type": "concept",
+   "formes": [
+    "babélisation",
+    "babéliennes",
+    "babélien",
+    "monolinguisme"
+   ],
+   "court": "Fragmentation en langues multiples, d’après le mythe biblique de la tour de Babel.",
+   "long": "Dans la Bible, Dieu confond la langue des hommes qui bâtissent la tour de Babel. Derrida a commenté ce mythe pour penser la traduction ; Stiegler oppose la diversité des langues au monolinguisme d’une langue mondiale unique."
+  },
+  {
+   "terme": "Bedeutsamkeit",
+   "type": "concept",
+   "formes": [
+    "Bedeutsamkeit"
+   ],
+   "court": "Chez Heidegger, la significativité : le réseau de sens dans lequel les choses du monde nous apparaissent.",
+   "long": "Pour Heidegger, nous ne rencontrons pas des objets neutres mais des choses prises dans un réseau de renvois et d’usages (le marteau renvoie au clou, à la maison…) : c’est la significativité du monde."
+  },
+  {
+   "terme": "Behaviorisme",
+   "type": "concept",
+   "formes": [
+    "behaviorisme",
+    "behavioriste",
+    "comportementalisme"
+   ],
+   "court": "Courant de psychologie qui étudie seulement les comportements observables, conditionnés par des stimuli.",
+   "long": "Fondé par John B. Watson (1913) et développé par B. F. Skinner, le behaviorisme explique la conduite par le conditionnement (récompenses, punitions) sans recourir à la conscience. Ses méthodes inspirent aujourd’hui la conception des applications et des réseaux sociaux, ce que Stiegler critique."
   },
   {
    "terme": "Bergsonien",
@@ -150,10 +323,21 @@
    "formes": [
     "bergsonien",
     "bergsonienne",
-    "bergsoniens"
+    "bergsoniens",
+    "bergsoniennes",
+    "bergsonnienne"
    ],
    "court": "Qui se rapporte à la philosophie d’Henri Bergson, pensée de la durée et de l’élan vital.",
    "long": "Henri Bergson (1859-1941) oppose le temps vécu, la durée, au temps mesuré des horloges, et voit dans la vie un élan créateur. Sa réflexion sur la technique et la morale dans « Les Deux Sources » est très présente dans ce livre."
+  },
+  {
+   "terme": "Bestand",
+   "type": "concept",
+   "formes": [
+    "Bestand"
+   ],
+   "court": "Chez Heidegger, le « fonds disponible » : ce que la technique moderne transforme en stock exploitable.",
+   "long": "Dans « La Question de la technique », Heidegger dit que sous le Gestell, toute chose (la forêt, le fleuve, l’homme lui-même) devient Bestand, réserve disponible pour l’exploitation."
   },
   {
    "terme": "Bifurcation",
@@ -165,6 +349,28 @@
    ],
    "court": "Changement de direction radical d’un système ; chez Stiegler, rupture nécessaire avec la trajectoire de l’Anthropocène.",
    "long": "En physique (Prigogine) et en mathématiques, une bifurcation est le point où un système peut basculer vers un état nouveau et imprévisible. Stiegler en fait un mot d’ordre : face à l’effondrement annoncé, il ne s’agit pas de s’adapter mais de bifurquer, d’inventer un autre modèle. « Bifurquer » est le titre du livre collectif du collectif Internation (2020)."
+  },
+  {
+   "terme": "Biogéonoographique",
+   "type": "concept",
+   "formes": [
+    "biogéonoographiques",
+    "biogéonoographique"
+   ],
+   "court": "Néologisme de Stiegler : qui concerne à la fois la vie (bio), la terre (géo) et l’esprit (noo) d’un lieu.",
+   "long": "Le mot assemble bio- (le vivant), géo- (la terre, le territoire), noo- (l’esprit, comme dans noétique) et -graphique (la description, l’inscription). Il désigne les milieux locaux pris dans toutes leurs dimensions : leurs écosystèmes, leurs reliefs et ressources, mais aussi les savoirs, les cultures et les façons de penser qui s’y sont formés. Stiegler reproche aux modèles économiques mondiaux d’ignorer ces milieux singuliers."
+  },
+  {
+   "terme": "Biopolitique",
+   "type": "concept",
+   "formes": [
+    "biopolitique",
+    "biopolitiques",
+    "biopouvoir",
+    "biopouvoirs"
+   ],
+   "court": "Chez Foucault, le pouvoir qui s’exerce sur la vie des populations : santé, natalité, hygiène.",
+   "long": "Michel Foucault décrit le passage d’un pouvoir qui faisait mourir (le souverain) à un biopouvoir qui gère la vie : statistiques, médecine, normes sanitaires, contrôle des naissances. La biopolitique est l’ensemble de ces techniques de gouvernement des corps et des populations."
   },
   {
    "terme": "Biosphère",
@@ -244,10 +450,25 @@
     "catastrophisme",
     "catastrophiste",
     "catastrophistes",
-    "catastrophisme éclairé"
+    "catastrophisme éclairé",
+    "katastrophè",
+    "cataclysmique"
    ],
    "court": "Attitude qui prend au sérieux la possibilité d’une catastrophe ; chez Dupuy, pour mieux l’éviter.",
    "long": "Le philosophe Jean-Pierre Dupuy a défendu un « catastrophisme éclairé » : tenir la catastrophe pour certaine, non par fatalisme, mais pour se donner les moyens de l’empêcher. Stiegler discute cette position dans le débat avec les collapsologues."
+  },
+  {
+   "terme": "Climatoscepticisme",
+   "type": "concept",
+   "formes": [
+    "climatoscepticisme",
+    "climato-sceptique",
+    "climato-sceptiques",
+    "climatosceptique",
+    "climatosceptiques"
+   ],
+   "court": "Attitude qui conteste la réalité ou l’origine humaine du réchauffement climatique.",
+   "long": "Le climatoscepticisme a été en partie entretenu par des industries fossiles qui ont financé le doute, comme l’ont montré les historiens Naomi Oreskes et Erik Conway (« Les Marchands de doute », 2010)."
   },
   {
    "terme": "Cognitivisme",
@@ -268,7 +489,8 @@
     "collapsologies",
     "collapsologique",
     "collapsologue",
-    "collapsologues"
+    "collapsologues",
+    "collapsologiste"
    ],
    "court": "Étude de l’effondrement possible de la civilisation industrielle.",
    "long": "Terme popularisé en 2015 par Pablo Servigne et Raphaël Stevens dans « Comment tout peut s’effondrer ». La collapsologie rassemble des travaux sur l’épuisement des ressources, le climat et la fragilité des systèmes interconnectés, pour envisager l’effondrement comme probable. Stiegler en discute les thèses : il en partage le diagnostic d’urgence mais critique ce qu’il juge être un renoncement à penser une bifurcation."
@@ -278,7 +500,8 @@
    "type": "concept",
    "formes": [
     "concrescence",
-    "concrescences"
+    "concrescences",
+    "con-crescence"
    ],
    "court": "Chez Whitehead, le processus par lequel une réalité nouvelle se forme en intégrant ce qui l’entoure.",
    "long": "Terme du philosophe Alfred North Whitehead (« Procès et réalité », 1929) : chaque événement réel est une concrescence, une croissance commune par laquelle il rassemble en une unité nouvelle les multiples influences du monde. Stiegler s’en sert pour penser le devenir comme processus créateur."
@@ -291,10 +514,30 @@
     "constative",
     "constatifs",
     "constatives",
-    "constativité"
+    "constativité",
+    "constativement"
    ],
    "court": "Se dit d’un énoncé qui décrit un état de fait et peut être vrai ou faux.",
    "long": "Chez John L. Austin, l’énoncé constatif (« il pleut ») s’oppose à l’énoncé performatif, qui accomplit une action. Stiegler interroge la frontière entre les deux : les sciences, censées seulement constater, deviennent performatives quand leurs modèles orientent l’action économique et politique."
+  },
+  {
+   "terme": "Corrélationnisme",
+   "type": "concept",
+   "formes": [
+    "corrélationnisme",
+    "corrélationniste"
+   ],
+   "court": "Selon le philosophe Quentin Meillassoux, la thèse qu’on ne peut penser le monde qu’en relation avec un sujet.",
+   "long": "Dans « Après la finitude » (2006), Meillassoux nomme corrélationnisme la position, dominante depuis Kant, selon laquelle nous n’avons accès qu’à la corrélation entre la pensée et l’être, jamais à l’un sans l’autre. Il cherche à penser une réalité indépendante de nous."
+  },
+  {
+   "terme": "Criticisme",
+   "type": "concept",
+   "formes": [
+    "criticisme"
+   ],
+   "court": "La philosophie critique de Kant, qui examine les limites et les conditions de la connaissance.",
+   "long": "Le criticisme s’oppose à la fois au dogmatisme, qui affirme sans examen, et au scepticisme, qui doute de tout : il fixe ce que la raison peut légitimement connaître."
   },
   {
    "terme": "Curativité",
@@ -303,7 +546,8 @@
     "curativité",
     "curatif",
     "curative",
-    "curatives"
+    "curatives",
+    "curativités"
    ],
    "court": "Capacité de soigner ; dimension curative (soignante) des techniques et des savoirs.",
    "long": "Stiegler oppose la dimension curative d’un pharmakon à sa dimension toxique. Une politique pharmacologique cherche à développer la curativité des techniques."
@@ -320,6 +564,22 @@
    "long": "Née dans les années 1940 (conférences Macy), la cybernétique étudie les systèmes qui se régulent par rétroaction (thermostat, organisme, société). Elle est à l’origine de l’informatique et de l’intelligence artificielle. Norbert Wiener s’inquiétait déjà de ses usages."
   },
   {
+   "terme": "Darwinisme",
+   "type": "concept",
+   "formes": [
+    "darwinien",
+    "darwinienne",
+    "darwiniens",
+    "néo-darwinienne",
+    "néo-darwinien",
+    "darwinisme",
+    "lamarckisme",
+    "lamarckien"
+   ],
+   "court": "Théorie de l’évolution par la sélection naturelle (Darwin), opposée à l’hérédité des caractères acquis (Lamarck).",
+   "long": "Charles Darwin (« L’Origine des espèces », 1859) explique l’évolution par la variation et la sélection des individus les mieux adaptés. Le néo-darwinisme y intègre la génétique. Le lamarckisme, d’après Jean-Baptiste de Lamarck, supposait que les caractères acquis au cours de la vie se transmettent ; il a été écarté par la biologie, même si l’épigénétique a nuancé le débat."
+  },
+  {
    "terme": "Dasein",
    "type": "concept",
    "formes": [
@@ -327,6 +587,17 @@
    ],
    "court": "Chez Heidegger, l’être humain en tant qu’il existe et se pose la question de l’être.",
    "long": "Mot allemand signifiant littéralement « être-là ». Dans « Être et temps » (1927), Heidegger désigne ainsi l’existence humaine : un être jeté dans le monde, qui se comprend à partir de sa mort et de ses possibles. Stiegler reproche à Heidegger d’avoir négligé le rôle de la technique dans la constitution du Dasein."
+  },
+  {
+   "terme": "Deinon",
+   "type": "concept",
+   "formes": [
+    "deinon",
+    "deinos",
+    "deinotaton"
+   ],
+   "court": "Mot grec : ce qui est à la fois prodigieux et terrible, employé par Sophocle à propos de l’homme.",
+   "long": "Dans le célèbre chœur d’« Antigone », Sophocle dit que de toutes les merveilles, rien n’est plus deinon que l’homme : capable d’inventer, de naviguer, de cultiver, mais aussi de détruire. Heidegger a longuement commenté ce mot, qui exprime l’ambivalence de la puissance humaine."
   },
   {
    "terme": "Derridien",
@@ -340,6 +611,18 @@
    "long": "Jacques Derrida (1930-2004), fondateur de la déconstruction, a été le directeur de thèse de Stiegler. Les notions de trace, de différance et de pharmakon, centrales dans ce livre, viennent de lui."
   },
   {
+   "terme": "Dialectique",
+   "type": "concept",
+   "formes": [
+    "dialectique",
+    "dialectiques",
+    "dialectiquement",
+    "dialectisable"
+   ],
+   "court": "Méthode de pensée qui avance par oppositions et dépassements, ou art du dialogue.",
+   "long": "Chez Platon, la dialectique est l’art de chercher la vérité par le dialogue. Chez Hegel, elle devient le mouvement par lequel une thèse s’oppose à son contraire et se dépasse dans une synthèse ; Marx l’applique à l’histoire matérielle. Le mot désigne aussi toute tension entre deux termes qui se transforment mutuellement."
+  },
+  {
    "terme": "Différance",
    "type": "concept",
    "formes": [
@@ -347,7 +630,9 @@
     "différances",
     "différante",
     "différantes",
-    "différant"
+    "différant",
+    "différanciation",
+    "diffèrement"
    ],
    "court": "Mot inventé par Derrida (avec un « a ») : le fait de différer dans le temps et de différer de soi.",
    "long": "Jacques Derrida forge ce néologisme, qui se prononce comme différence, pour réunir deux sens du verbe différer : être différent et remettre à plus tard. Le sens, la vie, la mémoire ne sont jamais pleinement présents, ils se constituent par des écarts et des délais. Stiegler en fait un outil pour penser le vivant (qui diffère l’entropie) et la technique, qui retarde, conserve et transmet."
@@ -372,7 +657,8 @@
    "formes": [
     "dissociété",
     "dis-sociation",
-    "dissociation"
+    "dissociation",
+    "dissociations"
    ],
    "court": "Société dont les liens se défont : chacun y est isolé, sans projet commun.",
    "long": "Le terme vient du philosophe Jacques Généreux (« La Dissociété », 2006). Stiegler l’emploie pour décrire la désintégration sociale produite par la disruption et la prolétarisation."
@@ -396,7 +682,11 @@
     "Déconstruction",
     "déconstruction",
     "déconstruit",
-    "déconstruire"
+    "déconstruire",
+    "déconstructions",
+    "déconstruisant",
+    "indéconstructible",
+    "indéconstructibilité"
    ],
    "court": "Méthode philosophique de Derrida qui défait les oppositions sur lesquelles reposent les textes et les concepts.",
    "long": "Jacques Derrida a développé la déconstruction à partir des années 1960 : lire attentivement les textes pour montrer que les couples hiérarchiques (parole/écriture, nature/technique, présence/absence) ne tiennent pas et que le terme rabaissé est en réalité premier. Stiegler, son ancien élève, en hérite pour penser la technique."
@@ -408,7 +698,12 @@
     "défonctionnalisation",
     "défonctionnalisations",
     "refonctionnalisation",
-    "refonctionnalisations"
+    "refonctionnalisations",
+    "défonctionnalise",
+    "défonctionnalisent",
+    "refonctionnalise",
+    "refonctionnaliser",
+    "refonctionnalisé"
    ],
    "court": "Perte puis réinvention de la fonction des organes humains sous l’effet des techniques.",
    "long": "Stiegler décrit comment l’apparition d’une technique défonctionnalise certains organes ou savoirs (la mémoire avec l’écriture, la marche avec la voiture), puis comment ceux-ci peuvent être refonctionnalisés, retrouver de nouveaux usages, à condition qu’on en prenne soin."
@@ -421,7 +716,11 @@
     "dénoétisations",
     "dénoétisés",
     "dénoétisé",
-    "dénoétisée"
+    "dénoétisée",
+    "dénoétisant",
+    "dénoétiser",
+    "anoétisant",
+    "ânoétisations"
    ],
    "court": "Perte ou affaiblissement de la capacité de penser par soi-même.",
    "long": "Néologisme de Stiegler. Il désigne la régression de la vie de l’esprit lorsque les savoirs et l’attention sont captés par des dispositifs techniques (médias, réseaux sociaux, calcul automatique) qui pensent et décident à notre place. C’est une forme de prolétarisation de l’esprit : on ne sait plus faire, plus vivre ensemble, plus réfléchir, faute d’avoir intériorisé les savoirs que les machines exécutent."
@@ -434,7 +733,13 @@
     "déphasages",
     "déphasée",
     "triphasage",
-    "triphasées"
+    "triphasées",
+    "déphasant",
+    "déphasent",
+    "déphasé",
+    "auto-déphasant",
+    "phasée",
+    "triphasée"
    ],
    "court": "Décalage entre deux processus qui ne vont pas au même rythme ; chez Simondon, dédoublement d’un être qui se transforme.",
    "long": "Chez Simondon, un être s’individue en se déphasant, en se dédoublant en phases distinctes. Stiegler parle de déphasage pour décrire les décalages entre l’évolution technique, très rapide, et l’évolution des sociétés et des psychismes, plus lente, à l’origine de la disruption."
@@ -454,7 +759,8 @@
    "formes": [
     "désublimation",
     "sublimation",
-    "sublimer"
+    "sublimer",
+    "archi-sublimatoire"
    ],
    "court": "Perte de la capacité à transformer ses pulsions en désirs élevés (amour, art, savoir).",
    "long": "En psychanalyse, la sublimation est la transformation des pulsions en activités valorisées socialement. Herbert Marcuse a parlé de « désublimation répressive » pour décrire la société de consommation. Stiegler reprend l’idée : le marketing exploite les pulsions au lieu de les sublimer en désir."
@@ -475,7 +781,11 @@
    "formes": [
     "déterritorialisation",
     "déterritorialisé",
-    "déterritorialisée"
+    "déterritorialisée",
+    "dé-territorialisation",
+    "déterritorialiser",
+    "déterritorialisés",
+    "territorialisation"
    ],
    "court": "Chez Deleuze et Guattari, le fait d’arracher des flux, des personnes ou des activités à leur territoire.",
    "long": "Gilles Deleuze et Félix Guattari décrivent le capitalisme comme une immense machine de déterritorialisation : il détache le travail, l’argent, les désirs de leurs ancrages locaux pour les faire circuler. Stiegler oppose à cette dynamique une revalorisation des localités et des savoirs situés."
@@ -490,6 +800,17 @@
    ],
    "court": "Courant de pensée qui considère l’effondrement de la civilisation comme inévitable ou imminent.",
    "long": "Terme proche de collapsologie, souvent employé de façon critique : il désigne une attitude qui tient l’effondrement pour certain et s’y prépare, parfois sur un mode fataliste. Stiegler oppose à l’effondrisme la nécessité d’inventer une économie et une politique néguanthropiques."
+  },
+  {
+   "terme": "Eigentlichkeit",
+   "type": "concept",
+   "formes": [
+    "Eigentlichkeit",
+    "inauthentique",
+    "inauthentiques"
+   ],
+   "court": "Chez Heidegger, l’authenticité : exister en assumant ses propres possibilités et sa mortalité.",
+   "long": "Dans « Être et temps », Heidegger oppose l’existence authentique (Eigentlichkeit), qui assume sa finitude, à l’existence inauthentique, dispersée dans le « on » anonyme des opinions et des habitudes."
   },
   {
    "terme": "Empeiria",
@@ -510,6 +831,15 @@
    ],
    "court": "Qui appartient au corps lui-même : un organe biologique, par opposition à un outil.",
    "long": "Terme d’Alfred Lotka, repris par Stiegler. L’évolution endosomatique est celle de tous les vivants : elle passe par la transformation lente des organes du corps au fil des générations. Elle s’oppose à l’évolution exosomatique, propre à l’humain, qui passe par la fabrication d’organes techniques extérieurs, beaucoup plus rapide et transmise par la culture plutôt que par les gènes."
+  },
+  {
+   "terme": "Enteignung",
+   "type": "concept",
+   "formes": [
+    "Enteignung"
+   ],
+   "court": "Mot allemand : expropriation, dépossession ; chez Heidegger, le pendant de l’Ereignis.",
+   "long": "Heidegger associe à l’Ereignis (l’événement appropriant) l’Enteignung, la désappropriation. Stiegler rapproche ce couple de la logique pharmacologique de la technique, qui approprie et dépossède à la fois."
   },
   {
    "terme": "Entropie",
@@ -536,6 +866,15 @@
    "long": "Jeu de mots de Stiegler : l’Anthropocène est avant tout un Entropocène, une époque où la dissipation de l’énergie, la destruction de la biodiversité et la perte des savoirs s’accélèrent. Il lui oppose le Néguanthropocène."
   },
   {
+   "terme": "Entropologie",
+   "type": "concept",
+   "formes": [
+    "entropologie"
+   ],
+   "court": "Mot de Lévi-Strauss : l’anthropologie devrait s’appeler entropologie, science de la désintégration.",
+   "long": "À la fin de « Tristes Tropiques » (1955), Claude Lévi-Strauss propose ce jeu de mots : l’humanité, par sa civilisation, accélère la désorganisation du monde, et l’anthropologie étudie ce processus. Stiegler s’en inspire pour sa néguanthropologie."
+  },
+  {
    "terme": "Ereignis",
    "type": "concept",
    "formes": [
@@ -551,10 +890,21 @@
     "eschatologie",
     "eschatologique",
     "eschatologiques",
-    "eskhaton"
+    "eskhaton",
+    "eschatologisme"
    ],
    "court": "Discours sur les fins dernières : la fin du monde, de l’histoire ou de l’humanité.",
    "long": "Du grec eskhaton, la fin dernière. Les religions ont développé des eschatologies (jugement dernier, apocalypse). Stiegler observe que l’Anthropocène réactive des discours eschatologiques, parfois religieux, parfois scientifiques, sur la fin de l’humanité."
+  },
+  {
+   "terme": "Ethnos",
+   "type": "concept",
+   "formes": [
+    "ethnos",
+    "ethnè"
+   ],
+   "court": "Mot grec : le peuple, la communauté, souvent opposée à la cité organisée (polis).",
+   "long": "Chez Aristote, l’ethnos désigne un peuple vivant sans les institutions de la cité. Le mot a donné ethnie et ethnologie."
   },
   {
    "terme": "Ethos",
@@ -576,6 +926,36 @@
    "long": "Néologisme de Jacques Derrida : on ne fait jamais entièrement sien ce qu’on s’approprie, une part reste étrangère. Stiegler l’applique à notre rapport aux techniques : nous ne nous les approprions qu’en étant aussi transformés et dépossédés par elles."
   },
   {
+   "terme": "Exo-mémorisation",
+   "type": "concept",
+   "formes": [
+    "exo-mémorisation",
+    "exo-mémorisée",
+    "exo-mémorisées",
+    "exomémorisées",
+    "exo-décentrements",
+    "exo-décentrés",
+    "exo-logique"
+   ],
+   "court": "Le fait de confier la mémoire à des supports extérieurs : écriture, archives, mémoires informatiques.",
+   "long": "Stiegler forge ce mot pour désigner l’extériorisation de la mémoire humaine dans les artefacts, ce qu’il appelle aussi rétention tertiaire. Cette exo-mémorisation transforme la manière dont nous retenons, oublions et transmettons, et peut décentrer la conscience hors d’elle-même (exo-décentrements)."
+  },
+  {
+   "terme": "Exo-transcendance",
+   "type": "concept",
+   "formes": [
+    "exo-transcendance",
+    "exo-transcendant",
+    "exo-spiritualité",
+    "exo-spirituel",
+    "exo-intellectuel",
+    "exosomatique-spirituel",
+    "exo-noétique"
+   ],
+   "court": "Néologismes de Stiegler : ce qui élève l’esprit en passant par des supports extérieurs (œuvres, techniques).",
+   "long": "Pour Stiegler, la vie de l’esprit (spiritualité, intellect, transcendance) n’est pas purement intérieure : elle passe par des objets extérieurs, comme les livres, les œuvres d’art ou les instruments. Il forge ces mots en exo- pour souligner que même ce qui nous dépasse et nous élève s’appuie sur l’exosomatisation."
+  },
+  {
    "terme": "Exorganisme",
    "type": "concept",
    "formes": [
@@ -584,7 +964,10 @@
     "exorganique",
     "exorganiques",
     "exorganisation",
-    "exorganisations"
+    "exorganisations",
+    "ex-organiques",
+    "exorganicité",
+    "endorganismes"
    ],
    "court": "Organisation formée d’humains et de leurs organes techniques : une famille, une entreprise, une ville, un État.",
    "long": "Concept de Stiegler pour décrire les êtres humains et les collectifs comme des organismes inséparables de leurs artefacts. Un exorganisme simple est un individu avec ses outils ; un exorganisme complexe est un groupement plus vaste (école, entreprise, nation, plateforme numérique) qui organise organes de chair et organes techniques. L’étude de leur formation et de leurs équilibres est ce que Stiegler appelle l’organologie générale."
@@ -622,10 +1005,37 @@
     "exosomatisés",
     "exosomatisées",
     "exo-somatisée",
-    "exosomatiquement"
+    "exosomatiquement",
+    "exosomatiser",
+    "exo-somatiser",
+    "exosomatisant",
+    "exosomatisables",
+    "exomatisation",
+    "savoir-exosomatiser",
+    "exosomatico-symboliques",
+    "endosomatisations"
    ],
    "court": "Le fait, pour l’être humain, de vivre au moyen d’organes artificiels extérieurs à son corps : outils, techniques, machines.",
    "long": "Notion reprise par Stiegler au mathématicien Alfred Lotka. Contrairement aux autres vivants, qui évoluent par leurs organes corporels (endosomatiques), l’humain développe des organes techniques hors de son corps : silex, écriture, lunettes, ordinateurs, réseaux. Cette « évolution exosomatique » transforme en retour nos façons de penser et de vivre. Pour Stiegler, elle s’est emballée avec l’industrie et le numérique, au point de produire l’Anthropocène : la question est de la remettre au service de la vie plutôt que de sa destruction."
+  },
+  {
+   "terme": "Extelligence",
+   "type": "concept",
+   "formes": [
+    "ex-telligence",
+    "extelligence"
+   ],
+   "court": "Intelligence déposée hors des cerveaux, dans la culture, les livres et les machines.",
+   "long": "Le terme a été proposé par le biologiste Jack Cohen et le mathématicien Ian Stewart (« Figments of Reality », 1997) : l’intelligence humaine dépend d’un capital culturel extérieur, transmis et partagé. L’idée rejoint l’exosomatisation de Stiegler."
+  },
+  {
+   "terme": "Extimité",
+   "type": "concept",
+   "formes": [
+    "extimité"
+   ],
+   "court": "Mot de Lacan : ce qui est le plus intime est aussi extérieur à nous.",
+   "long": "Lacan forge extimité pour dire que le cœur de l’intime (le désir, l’inconscient) est structuré par quelque chose d’extérieur, le langage et l’Autre. Le mot désigne aussi aujourd’hui l’exposition de l’intime sur les réseaux sociaux."
   },
   {
    "terme": "Facticité",
@@ -664,6 +1074,22 @@
    "long": "Dans « Les Deux Sources de la morale et de la religion » (1932), Bergson décrit la fonction fabulatrice comme une capacité de l’imagination à produire des fictions (dieux, légendes) qui protègent la vie collective contre l’angoisse et la dissolution. Stiegler la relie à la technique : toute fabrication s’accompagne de fabulation, de récits qui donnent sens à l’avenir."
   },
   {
+   "terme": "Geschichtlichkeit",
+   "type": "concept",
+   "formes": [
+    "Geschichtlichkeit",
+    "Weltgeschichtlichkeit",
+    "geschichtlich",
+    "weltgeschichtlich",
+    "weltlich",
+    "geistich",
+    "geistig",
+    "Geist"
+   ],
+   "court": "Mots allemands de Heidegger et Hegel : l’historicité, l’historial, le mondain, l’esprit.",
+   "long": "Geschichtlichkeit (historicité) désigne chez Heidegger le fait que l’existence se déploie historiquement ; weltgeschichtlich qualifie ce qui appartient à l’histoire du monde, weltlich ce qui est mondain. Geist (l’esprit) est un concept central de Hegel."
+  },
+  {
    "terme": "Gestell",
    "type": "concept",
    "formes": [
@@ -671,6 +1097,15 @@
    ],
    "court": "Chez Heidegger, la mise en demeure de toute chose comme ressource exploitable par la technique moderne.",
    "long": "Mot allemand (dispositif, arraisonnement) utilisé par Martin Heidegger dans « La Question de la technique » (1953) : la technique moderne n’est pas un simple outil, elle est une manière de dévoiler le monde comme stock disponible (la rivière comme énergie, la forêt comme bois). Stiegler discute cette pensée tout en refusant l’opposition de Heidegger entre technique et pensée."
+  },
+  {
+   "terme": "Geviert",
+   "type": "concept",
+   "formes": [
+    "Geviert"
+   ],
+   "court": "Chez Heidegger, le « Quadriparti » : la terre, le ciel, les divins et les mortels, rassemblés dans la chose.",
+   "long": "Dans ses textes tardifs (« La Chose », « Bâtir habiter penser »), Heidegger décrit le monde comme le jeu de ces quatre régions, que la technique moderne tend à faire oublier."
   },
   {
    "terme": "Gouvernementalité",
@@ -687,10 +1122,37 @@
    "type": "concept",
    "formes": [
     "grammatisation",
-    "grammatisations"
+    "grammatisations",
+    "grammatisé",
+    "grammatisés",
+    "grammata",
+    "grammatistai"
    ],
    "court": "Découpage de flux continus (parole, gestes, comportements) en éléments discrets reproductibles.",
    "long": "Notion empruntée à l’historien Sylvain Auroux et généralisée par Stiegler. L’écriture alphabétique grammatise la parole en lettres ; la machine industrielle grammatise les gestes de l’artisan ; le numérique grammatise nos comportements en données. Chaque étape permet de reproduire et de calculer ce qui était vivant, avec des effets curatifs ou toxiques."
+  },
+  {
+   "terme": "Hantologie",
+   "type": "concept",
+   "formes": [
+    "hantologie",
+    "revenance",
+    "revenante",
+    "revenants"
+   ],
+   "court": "Chez Derrida, pensée des spectres : ce qui, du passé, continue de revenir et de nous hanter.",
+   "long": "Dans « Spectres de Marx » (1993), Derrida forge le mot hantologie, qui se prononce comme ontologie : penser non pas ce qui est pleinement présent, mais ce qui revient, comme un fantôme (la revenance). Les héritages, les promesses non tenues et les morts continuent ainsi d’agir sur le présent."
+  },
+  {
+   "terme": "Hermeneia",
+   "type": "concept",
+   "formes": [
+    "hermeneia",
+    "herméneutique",
+    "herméneutiques"
+   ],
+   "court": "Mot grec : l’interprétation, l’expression ; d’où l’herméneutique, art d’interpréter les textes.",
+   "long": "Le mot est associé au dieu Hermès, messager et interprète. L’herméneutique, développée par Schleiermacher, Dilthey, Gadamer et Ricœur, étudie les conditions de la compréhension et de l’interprétation."
   },
   {
    "terme": "Historicité",
@@ -704,20 +1166,47 @@
    "long": "Chez Heidegger, l’historialité est la manière dont l’être humain existe historiquement, en héritant d’un passé et en se projetant vers un avenir. L’historien François Hartog parle de « régimes d’historicité » pour décrire les rapports d’une société au passé, au présent et à l’avenir."
   },
   {
+   "terme": "Hyper-accélération",
+   "type": "concept",
+   "formes": [
+    "hyper-accélération",
+    "hyperaccélération"
+   ],
+   "court": "Accélération de l’accélération : emballement des transformations techniques, économiques et écologiques.",
+   "long": "Le terme désigne une phase où les changements ne sont plus seulement rapides mais s’accélèrent eux-mêmes, au point que les sociétés ne peuvent plus s’y ajuster. Il fait écho à la « Grande Accélération » observée depuis 1950 par les scientifiques du système Terre, et aux analyses du sociologue Hartmut Rosa sur l’accélération sociale. Stiegler y voit la condition de la disruption."
+  },
+  {
    "terme": "Hypercontrôle",
    "type": "concept",
    "formes": [
-    "hypercontrôle"
+    "hypercontrôle",
+    "hyper-contrôle"
    ],
    "court": "Surveillance et pilotage généralisés des comportements par les technologies numériques.",
    "long": "Stiegler prolonge l’analyse de Deleuze sur les « sociétés de contrôle » : le numérique permet de tracer et d’influencer en temps réel les comportements de chacun, au profit des plateformes et des États."
+  },
+  {
+   "terme": "Hypercritique",
+   "type": "concept",
+   "formes": [
+    "hypercritique",
+    "hypercritiques",
+    "hyper-critique",
+    "hyper-critiques"
+   ],
+   "court": "Chez Stiegler, une critique qui porte aussi sur ses propres conditions, notamment techniques.",
+   "long": "Au-delà du sens courant (excessivement critique), Stiegler appelle hypercritique un prolongement de la philosophie critique de Kant : examiner non seulement les limites de la raison, mais aussi les supports techniques (écriture, médias, numérique) qui conditionnent la pensée, et les effets pharmacologiques de ces supports. Il en fait une exigence pour penser l’Anthropocène."
   },
   {
    "terme": "Hypermatière",
    "type": "concept",
    "formes": [
     "hypermatière",
-    "hypermatières"
+    "hypermatières",
+    "hypermatérielle",
+    "hypermatérielles",
+    "hypermatériels",
+    "hypermatérialiste"
    ],
    "court": "Matière devenue indissociable de l’information qui la transforme, comme dans les technologies numériques.",
    "long": "Notion de Stiegler, inspirée de Lyotard : avec les nanotechnologies, l’électronique et le numérique, la distinction entre matière et forme, entre énergie et information, s’efface. Une puce électronique est de l’hypermatière : de la matière organisée à l’échelle de l’information."
@@ -768,7 +1257,9 @@
     "immanent",
     "immanente",
     "immanents",
-    "immanentes"
+    "immanentes",
+    "immanences",
+    "immanentiste"
    ],
    "court": "Le fait de résider à l’intérieur d’une chose ou du monde, sans principe supérieur extérieur.",
    "long": "En philosophie, l’immanence s’oppose à la transcendance : ce qui est immanent agit de l’intérieur, sans recours à un au-delà (Dieu, idées éternelles). Deleuze et Guattari parlent de « plan d’immanence ». Chez Stiegler, l’immanence de l’effondrement désigne aussi son imminence, le fait qu’il soit déjà là, en germe, dans le système présent."
@@ -780,10 +1271,51 @@
     "individuation",
     "individuations",
     "individuent",
-    "individue"
+    "individue",
+    "individuant",
+    "individuée",
+    "désindividuation"
    ],
    "court": "Processus par lequel un individu ou un groupe se forme et devient lui-même, sans jamais être achevé.",
    "long": "Concept central du philosophe Gilbert Simondon, repris par Stiegler. L’individu n’est pas donné d’avance : il se constitue en permanence, en relation avec un milieu et avec les autres. Stiegler distingue l’individuation psychique (le « je »), l’individuation collective (le « nous ») et l’individuation technique (l’évolution des objets techniques), qui sont liées. Une société saine est celle qui permet à chacun de s’individuer, c’est-à-dire de se singulariser."
+  },
+  {
+   "terme": "Industrialisme",
+   "type": "concept",
+   "formes": [
+    "industrialisme",
+    "hyper-industrielle",
+    "hyperindustriel",
+    "hyperindustrielle",
+    "fordiste",
+    "fordisme"
+   ],
+   "court": "Modèle de société organisé autour de la production industrielle de masse (dont le fordisme est un exemple).",
+   "long": "Le fordisme, d’après Henry Ford, associe travail à la chaîne, standardisation et consommation de masse. Stiegler parle d’époque hyper-industrielle pour désigner un capitalisme où l’industrialisation s’étend à la culture, à l’attention et aux savoirs."
+  },
+  {
+   "terme": "Indécidable",
+   "type": "concept",
+   "formes": [
+    "indécidable",
+    "indécidables",
+    "indécidabilité",
+    "indécidabilités",
+    "incomplétude"
+   ],
+   "court": "Qui ne peut être ni démontré ni réfuté dans un système donné.",
+   "long": "En logique, Kurt Gödel a montré en 1931 qu’un système formel assez riche contient des énoncés indécidables : son incomplétude est inévitable. Derrida emploie le mot pour désigner ce qui échappe aux oppositions tranchées (le pharmakon est un « indécidable », à la fois remède et poison)."
+  },
+  {
+   "terme": "Infrasomatique",
+   "type": "concept",
+   "formes": [
+    "infrasomatique",
+    "infrasomatisation",
+    "infrasomatiques"
+   ],
+   "court": "Néologisme de Stiegler : ce qui agit en dessous du corps, à l’échelle des molécules et des cellules.",
+   "long": "En écho à endosomatique (dans le corps) et exosomatique (hors du corps), Stiegler forge infrasomatique pour désigner les techniques qui interviennent à l’échelle infra-corporelle : biotechnologies, génie génétique, nanotechnologies. Elles transforment le vivant de l’intérieur, à une échelle invisible."
   },
   {
    "terme": "Internation",
@@ -797,15 +1329,58 @@
    "long": "L’anthropologue Marcel Mauss proposait l’internation comme alternative à la fois au nationalisme et à un internationalisme qui effacerait les nations. Stiegler a fondé avec d’autres chercheurs le collectif Internation, qui a publié en 2020 « Bifurquer », ouvrage collectif sur l’Anthropocène destiné aux Nations unies."
   },
   {
+   "terme": "Isonomia",
+   "type": "concept",
+   "formes": [
+    "isonomia",
+    "isonomie"
+   ],
+   "court": "Mot grec : l’égalité devant la loi, principe de la démocratie athénienne.",
+   "long": "L’isonomia désigne l’égalité des droits des citoyens et leur égale participation à la loi, instaurée à Athènes par les réformes de Clisthène (fin du VIe siècle av. J.-C.)."
+  },
+  {
+   "terme": "Itérabilité",
+   "type": "concept",
+   "formes": [
+    "itérabilité",
+    "restance"
+   ],
+   "court": "Chez Derrida, la capacité d’un signe à être répété dans d’autres contextes, ce qui le rend toujours transformable.",
+   "long": "Pour Derrida, un signe n’est un signe que s’il peut être répété (cité, recopié) en dehors de son contexte d’origine : c’est son itérabilité. Il parle aussi de « restance » pour désigner ce qui reste d’une marque une fois son auteur absent. Ces notions sont au cœur de sa discussion avec Austin et Searle sur la performativité."
+  },
+  {
    "terme": "Kantien",
    "type": "concept",
    "formes": [
     "kantien",
     "kantienne",
-    "kantiens"
+    "kantiens",
+    "kantiennes",
+    "kantisme"
    ],
    "court": "Qui se rapporte à la philosophie d’Emmanuel Kant.",
    "long": "Emmanuel Kant (1724-1804) a fondé la philosophie critique : examiner les limites de la raison, définir les conditions de la connaissance, de la morale et du jugement. Stiegler dialogue constamment avec lui, notamment sur les Lumières et sur l’imagination."
+  },
+  {
+   "terme": "Katechon",
+   "type": "concept",
+   "formes": [
+    "Katechon",
+    "katechon"
+   ],
+   "court": "Mot grec de saint Paul : « ce qui retient » la venue de la fin des temps ; repris par Carl Schmitt.",
+   "long": "Dans la deuxième épître aux Thessaloniciens, le katechon retarde l’avènement de l’Antéchrist et de la fin du monde. Carl Schmitt y voit la fonction des pouvoirs politiques qui contiennent le chaos."
+  },
+  {
+   "terme": "Kinèsis",
+   "type": "concept",
+   "formes": [
+    "kinésis",
+    "kinèsis",
+    "kinêsis"
+   ],
+   "court": "Mot grec : le mouvement, le changement.",
+   "long": "Chez Aristote, la kinèsis désigne tout changement : déplacement, croissance, altération. Le mot a donné cinétique et cinéma."
   },
   {
    "terme": "Kléos",
@@ -835,7 +1410,10 @@
     "localité",
     "localités",
     "localisme",
-    "localistes"
+    "localistes",
+    "extralocale",
+    "intralocale",
+    "localisables"
    ],
    "court": "Lieu singulier avec son milieu et ses savoirs ; chez Stiegler, échelle nécessaire contre l’uniformisation mondiale.",
    "long": "Stiegler insiste sur l’importance des localités (villages, villes, régions, cultures) comme lieux où se forment des savoirs et des solidarités. Il critique à la fois l’uniformisation mondiale et le repli localiste fermé, et défend des localités ouvertes, reliées entre elles."
@@ -861,6 +1439,28 @@
    "long": "Pour la sagesse grecque, le metron est la limite qu’il ne faut pas franchir. La formule de Protagoras, « l’homme est la mesure de toutes choses », emploie ce mot. Stiegler oppose le sens de la mesure à l’ubris de l’Anthropocène."
   },
   {
+   "terme": "Microphysique du pouvoir",
+   "type": "concept",
+   "formes": [
+    "microphysique",
+    "micropolitique"
+   ],
+   "court": "Analyse du pouvoir dans les relations quotidiennes et les petites institutions, plutôt qu’au sommet de l’État.",
+   "long": "Foucault parle de microphysique du pouvoir pour montrer que le pouvoir s’exerce partout, dans les écoles, les hôpitaux, les ateliers, à travers des règlements et des gestes. Deleuze et Guattari parlent de micropolitique pour désigner les désirs et les rapports de force à petite échelle."
+  },
+  {
+   "terme": "Millénarisme",
+   "type": "concept",
+   "formes": [
+    "millénarisme",
+    "millénarismes",
+    "millénariste",
+    "millénaristes"
+   ],
+   "court": "Croyance en l’avènement prochain d’une ère de bonheur ou d’une fin des temps.",
+   "long": "À l’origine, le millénarisme attend le règne de mille ans annoncé par l’Apocalypse de Jean. Par extension, il désigne toute attente d’un bouleversement final qui inaugurera un monde nouveau."
+  },
+  {
    "terme": "Mécroissance",
    "type": "concept",
    "formes": [
@@ -875,7 +1475,9 @@
    "formes": [
     "médiance",
     "mésologie",
-    "mésologique"
+    "mésologique",
+    "médiances",
+    "mésologiques"
    ],
    "court": "Chez Augustin Berque, le lien indissociable entre une société et son milieu.",
    "long": "Le géographe Augustin Berque, s’inspirant du philosophe japonais Watsuji Tetsurō, appelle médiance le « sens » d’un milieu humain : nous ne vivons pas dans un environnement neutre mais dans un milieu chargé de significations. La mésologie est l’étude de ces milieux."
@@ -898,7 +1500,8 @@
     "métastables",
     "métastabilisation",
     "métastabilisations",
-    "métastabilisent"
+    "métastabilisent",
+    "métastabilisées"
    ],
    "court": "Se dit d’un équilibre précaire, plein de tensions, qui peut basculer vers un nouvel état.",
    "long": "Notion de physique reprise par Simondon : un système métastable n’est ni stable ni instable, il contient des énergies potentielles qui peuvent déclencher une transformation (comme l’eau surfondue qui gèle d’un coup). Pour Simondon et Stiegler, les individus et les sociétés vivent dans de tels équilibres métastables."
@@ -909,7 +1512,8 @@
    "formes": [
     "newtonien",
     "newtonienne",
-    "newtoniens"
+    "newtoniens",
+    "newtonisme"
    ],
    "court": "Qui se rapporte à la physique d’Isaac Newton, fondée sur des lois mécaniques universelles et réversibles.",
    "long": "La mécanique de Newton (fin du XVIIe siècle) décrit un univers régi par des lois de mouvement déterministes, où le temps n’a pas de direction. La thermodynamique, en introduisant l’entropie et l’irréversibilité, a rompu avec ce modèle, ce que Stiegler souligne."
@@ -923,6 +1527,15 @@
    ],
    "court": "Diversité des façons de penser, des cultures et des savoirs, aussi vitale que la biodiversité.",
    "long": "Néologisme de Stiegler. De même que la biodiversité est nécessaire à la résilience des écosystèmes, la diversité des savoirs, des langues et des points de vue est nécessaire à la vitalité des sociétés. Il craint que le calcul algorithmique, en standardisant goûts et opinions, n’entraîne un effondrement de cette noodiversité."
+  },
+  {
+   "terme": "Noogenèse",
+   "type": "concept",
+   "formes": [
+    "noogenèse"
+   ],
+   "court": "Naissance et développement de l’esprit, de la pensée, à l’échelle de l’espèce ou de l’individu.",
+   "long": "Formé sur noos (l’esprit) et genèse, le mot désigne l’apparition de la vie de l’esprit. Teilhard de Chardin l’employait pour décrire l’évolution vers la noosphère ; Stiegler pense la noogenèse comme inséparable de la technogenèse, la formation des techniques."
   },
   {
    "terme": "Noosphère",
@@ -945,6 +1558,16 @@
    "long": "Pour le philosophe et médecin Georges Canguilhem, être en bonne santé, ce n’est pas être « normal » mais être normatif : capable d’instituer de nouvelles normes face à un milieu changeant. Stiegler applique cette idée aux sociétés."
   },
   {
+   "terme": "Noumène",
+   "type": "concept",
+   "formes": [
+    "noumène",
+    "noumènes"
+   ],
+   "court": "Chez Kant, la chose telle qu’elle est en elle-même, indépendamment de notre perception, inconnaissable.",
+   "long": "Kant distingue les phénomènes, les choses telles qu’elles nous apparaissent, et les noumènes, que la raison peut penser mais non connaître. Notre connaissance est limitée au monde phénoménal."
+  },
+  {
    "terme": "Noèse",
    "type": "concept",
    "formes": [
@@ -961,7 +1584,11 @@
    "formes": [
     "noétique",
     "noétiques",
-    "noétiquement"
+    "noétiquement",
+    "noétisation",
+    "noétise",
+    "renoétisée",
+    "noético-psychiques"
    ],
    "court": "Qui relève de l’esprit, de la pensée et du savoir.",
    "long": "Du grec noûs, l’esprit, l’intellect. Chez Stiegler, l’âme noétique désigne la capacité humaine de penser, de désirer, de savoir et d’inventer, toujours appuyée sur des supports techniques (écriture, livres, outils). Il parle ainsi de « vie noétique », de « nécromasse noétique » (les savoirs accumulés des générations passées) ou de « différance noétique ». Il craint que les technologies numériques, mal utilisées, ne court-circuitent cette capacité : c’est la dénoétisation."
@@ -981,7 +1608,8 @@
    "type": "concept",
    "formes": [
     "nécromasse",
-    "nécromasses"
+    "nécromasses",
+    "nécro-masse"
    ],
    "court": "Matière organique morte (feuilles, bois, cadavres) qui nourrit les sols ; chez Stiegler, aussi les savoirs hérités des morts.",
    "long": "En écologie, la nécromasse est l’ensemble de la matière organique morte qui, décomposée, forme l’humus et rend la vie possible. Stiegler en fait une métaphore : la « nécromasse noétique » est ce que les générations disparues nous laissent sous forme d’œuvres, de savoirs et de techniques. Comme un sol, elle doit être entretenue et cultivée, faute de quoi elle devient poussière stérile."
@@ -993,7 +1621,11 @@
     "néguanthropie",
     "néguanthropique",
     "néguanthropiques",
-    "néguanthropies"
+    "néguanthropies",
+    "néguanthropiser",
+    "nég-anthropocentrés",
+    "néguanthropo-logiques",
+    "tout-néguanthropo-logique"
    ],
    "court": "Capacité humaine à lutter contre la désorganisation qu’elle produit, en créant de la diversité et du sens.",
    "long": "Néologisme de Stiegler, construit sur néguentropie. Toute activité humaine peut détruire (anthropie) ou au contraire inventer, soigner, diversifier (néguanthropie). Une économie néguanthropique serait une économie qui valorise ce qui préserve et enrichit le monde : les savoirs, la biodiversité, la diversité des cultures. Stiegler appelle cette nouvelle époque le Néguanthropocène."
@@ -1034,16 +1666,58 @@
    "long": "Notion introduite par le physicien Erwin Schrödinger dans « Qu’est-ce que la vie ? » (1944) : les êtres vivants maintiennent leur organisation en puisant de l’ordre dans leur environnement, ils diffèrent localement l’entropie. Stiegler s’en inspire pour définir l’activité humaine bonne comme néguentropique, puis néguanthropique."
   },
   {
+   "terme": "Néoclassique",
+   "type": "concept",
+   "formes": [
+    "néo-classique",
+    "néoclassique",
+    "néoclassiques",
+    "néo-classiques"
+   ],
+   "court": "Courant dominant de la science économique, fondé sur le calcul rationnel des individus et l’équilibre des marchés.",
+   "long": "L’économie néoclassique, née à la fin du XIXe siècle (Walras, Jevons, Menger), modélise mathématiquement les choix des agents et l’équilibre général. Des économistes comme Georgescu-Roegen lui ont reproché d’ignorer les lois de la thermodynamique et les limites de la biosphère."
+  },
+  {
+   "terme": "Néolibéralisme",
+   "type": "concept",
+   "formes": [
+    "néolibéralisme",
+    "néo-libéralisme",
+    "néolibéral",
+    "néo-libérale",
+    "néolibéraux",
+    "ultralibéral",
+    "ultralibéralisme",
+    "libertarianisme",
+    "libertarienne",
+    "libertariens"
+   ],
+   "court": "Doctrine qui fait du marché concurrentiel le modèle de toute la société, avec un État au service de la concurrence.",
+   "long": "Né dans les années 1930-1940 (Hayek, Friedman), le néolibéralisme s’impose dans les années 1980 avec Thatcher et Reagan : dérégulation, privatisations, financiarisation. Le libertarianisme va plus loin en réduisant l’État au minimum. Stiegler critique ces doctrines pour leur court-termisme et leur aveuglement à l’entropie."
+  },
+  {
    "terme": "Objet transitionnel",
    "type": "concept",
    "formes": [
     "transitionnel",
     "transitionnelle",
     "transitionnels",
-    "objet transitionnel"
+    "objet transitionnel",
+    "transitionnellement"
    ],
    "court": "Chez Winnicott, l’objet (doudou, couverture) qui aide l’enfant à passer de la fusion avec sa mère au monde extérieur.",
    "long": "L’objet transitionnel n’est ni tout à fait intérieur ni tout à fait extérieur : il ouvre un espace intermédiaire où naissent le jeu, la culture et la créativité. Stiegler y voit le prototype de tout pharmakon."
+  },
+  {
+   "terme": "Oikeios",
+   "type": "concept",
+   "formes": [
+    "oikeios",
+    "oikos",
+    "oikeiôsis"
+   ],
+   "court": "Mot grec : ce qui est propre, familier, de la maison (oikos), d’où viennent économie et écologie.",
+   "long": "L’oikos est la maison, le foyer. Il a donné « économie » (la gestion de la maison) et « écologie » (la science de la maison commune). Oikeios qualifie ce qui nous est propre et familier ; les stoïciens parlaient d’oikeiôsis pour l’appropriation de soi et du monde."
   },
   {
    "terme": "Onto-théologie",
@@ -1063,10 +1737,37 @@
     "organologie",
     "organologique",
     "organologiques",
-    "organogenèse"
+    "organogenèse",
+    "exorganologie",
+    "exorganologique",
+    "exorganologiques",
+    "exorganologiquement",
+    "organicité"
    ],
    "court": "Étude conjointe des organes du corps, des organes techniques et des organisations sociales.",
    "long": "Stiegler appelle « organologie générale » une méthode qui étudie ensemble trois niveaux qui évoluent en se transformant mutuellement : les organes physiologiques (le cerveau, la main), les organes artificiels (outils, écritures, machines) et les organisations sociales (institutions, marchés, États). On ne peut, selon lui, comprendre aucun des trois sans les deux autres."
+  },
+  {
+   "terme": "Orthothétique",
+   "type": "concept",
+   "formes": [
+    "orthothétique",
+    "orthothétiques",
+    "orthothèse"
+   ],
+   "court": "Chez Stiegler, se dit d’un enregistrement exact du passé (écriture alphabétique, photographie, données).",
+   "long": "Du grec orthos (droit, exact) et thesis (position). Stiegler appelle orthothétiques les supports de mémoire qui enregistrent les choses de manière exacte et reproductible : l’écriture alphabétique pour la parole, la photographie et l’enregistrement sonore pour les images et les sons, le numérique pour les comportements. Cette exactitude rend possibles les sciences, la loi écrite, mais aussi le contrôle."
+  },
+  {
+   "terme": "Paradeigma",
+   "type": "concept",
+   "formes": [
+    "paradeigma",
+    "paradigme",
+    "paradigmes"
+   ],
+   "court": "Mot grec : le modèle, l’exemple ; d’où paradigme, cadre de pensée dominant d’une époque.",
+   "long": "Chez Platon, le paradeigma est le modèle idéal que copient les choses. L’historien des sciences Thomas Kuhn a popularisé le paradigme comme ensemble de théories et de méthodes partagées par une communauté scientifique, renversé lors des révolutions scientifiques."
   },
   {
    "terme": "Parrêsia",
@@ -1091,7 +1792,12 @@
     "performative",
     "performatifs",
     "performatives",
-    "performativement"
+    "performativement",
+    "performativités",
+    "performe",
+    "performent",
+    "per-formative",
+    "per-formance"
    ],
    "court": "Propriété d’une parole qui accomplit ce qu’elle dit (« je le promets », « je vous déclare unis »).",
    "long": "Notion du philosophe du langage John L. Austin : certains énoncés ne décrivent pas le monde, ils agissent sur lui. Stiegler l’étend aux discours, aux modèles et aux algorithmes qui, en prétendant décrire la réalité, la façonnent : une prévision économique ou un classement numérique modifie les comportements qu’il annonce."
@@ -1139,6 +1845,30 @@
    "long": "Pour Aristote, la philia est le lien d’amitié et de bienveillance réciproque sans lequel aucune cité ne peut exister. Stiegler l’associe au soin et à la confiance qui tissent une communauté, et que la prolétarisation et le consumérisme détruisent."
   },
   {
+   "terme": "Phusis",
+   "type": "concept",
+   "formes": [
+    "phusis",
+    "physis"
+   ],
+   "court": "Mot grec : la nature, comme puissance qui fait naître et croître les choses.",
+   "long": "Pour les Grecs, la phusis désigne ce qui pousse et se déploie de soi-même, par opposition à la tekhnè, ce qui est fabriqué. Heidegger a beaucoup médité ce mot. Stiegler conteste l’opposition stricte entre phusis et tekhnè."
+  },
+  {
+   "terme": "Plateformisation",
+   "type": "concept",
+   "formes": [
+    "plateformisation",
+    "plateformisé",
+    "plateformisée",
+    "datafication",
+    "smartification",
+    "métadata"
+   ],
+   "court": "Réorganisation d’activités autour de plateformes numériques qui collectent et exploitent des données.",
+   "long": "Uber pour les transports, Airbnb pour le logement, Amazon pour le commerce : des plateformes intermédiaires captent les échanges et les données (datafication). La « smartification » désigne l’ajout de capteurs et de calcul à tous les objets et à la ville."
+  },
+  {
    "terme": "Points de basculement",
    "type": "concept",
    "formes": [
@@ -1160,6 +1890,17 @@
    "long": "La politeia désigne à la fois le régime politique, la citoyenneté et la vie commune de la polis, la cité grecque. Stiegler s’interroge sur ce que pourrait être une politeia à l’heure de l’Anthropocène et du numérique."
   },
   {
+   "terme": "Polémologie",
+   "type": "concept",
+   "formes": [
+    "polémologie",
+    "polémologique",
+    "politico-polémologique"
+   ],
+   "court": "Étude scientifique de la guerre, de ses causes et de ses formes.",
+   "long": "Le mot a été proposé par le sociologue Gaston Bouthoul après la Seconde Guerre mondiale. Il vient du grec polemos, la guerre."
+  },
+  {
    "terme": "Ponos",
    "type": "concept",
    "formes": [
@@ -1169,13 +1910,51 @@
    "long": "Chez Hésiode, le ponos est le travail dur auquel les humains sont condamnés après la faute de Prométhée et l’envoi de Pandore. Il s’oppose à l’ergon, l’œuvre accomplie."
   },
   {
+   "terme": "Post-croissance",
+   "type": "concept",
+   "formes": [
+    "post-croissance",
+    "décroissance"
+   ],
+   "court": "Économie qui ne fait plus de la croissance du PIB son objectif, pour respecter les limites planétaires.",
+   "long": "La décroissance (Serge Latouche) prône une réduction de la production et de la consommation dans les pays riches ; la post-croissance cherche plus largement à organiser la prospérité sans dépendre de la croissance."
+  },
+  {
+   "terme": "Post-démocratie",
+   "type": "concept",
+   "formes": [
+    "post-démocratie",
+    "post-démocratiques",
+    "illibérale",
+    "illibérales",
+    "illibéralisme"
+   ],
+   "court": "Régime qui garde les formes de la démocratie mais où les décisions échappent de fait aux citoyens.",
+   "long": "Le politiste Colin Crouch a décrit la post-démocratie (2004) : élections maintenues, mais pouvoir réel exercé par les élites économiques. La « démocratie illibérale » revendiquée par certains dirigeants conserve les élections tout en restreignant les libertés."
+  },
+  {
+   "terme": "Post-vérité",
+   "type": "concept",
+   "formes": [
+    "post-vérité",
+    "post-véridique",
+    "post-véridiques",
+    "post-truth"
+   ],
+   "court": "Situation où les faits comptent moins, dans l’opinion, que les émotions et les croyances.",
+   "long": "Le dictionnaire d’Oxford a désigné « post-truth » mot de l’année 2016, après le référendum sur le Brexit et l’élection de Donald Trump : des affirmations fausses y ont circulé massivement sans être disqualifiées par leur démenti. Stiegler relie la post-vérité à la destruction des savoirs et de l’espace public par les industries de l’attention."
+  },
+  {
    "terme": "Poïesis",
    "type": "concept",
    "formes": [
     "poiésis",
     "poïesis",
     "poiein",
-    "poiêsis"
+    "poiêsis",
+    "poièma",
+    "poiétès",
+    "poïétique"
    ],
    "court": "Mot grec : la fabrication, la création, l’acte de faire advenir quelque chose.",
    "long": "Du verbe poiein, faire, produire. La poïesis désigne aussi bien le travail de l’artisan que la création poétique (d’où le mot poésie). Heidegger y voit une manière de dévoiler le monde, opposée au Gestell technique."
@@ -1201,7 +1980,9 @@
     "prolétarisé",
     "prolétarisés",
     "prolétarisée",
-    "prolétarisées"
+    "prolétarisées",
+    "prolétarisants",
+    "prolétarisent"
    ],
    "court": "Perte des savoirs (faire, vivre, penser) au profit des machines et des systèmes qui les remplacent.",
    "long": "Marx décrivait le prolétaire comme l’ouvrier dont le savoir-faire est passé dans la machine. Stiegler généralise : le consommateur perd son savoir-vivre au profit du marketing, le citoyen et même le savant perdent leur savoir théorique au profit du calcul automatique. Être prolétarisé, c’est être dépossédé de savoirs, et donc de la capacité d’agir et de décider. Il appelle à une déprolétarisation par l’économie contributive."
@@ -1213,7 +1994,8 @@
     "protention",
     "protentions",
     "archi-protention",
-    "archi-protentions"
+    "archi-protentions",
+    "protentionnalité"
    ],
    "court": "Attente immédiate de ce qui va venir, qui oriente la conscience vers l’avenir.",
    "long": "Terme de Husserl, symétrique de la rétention : en écoutant une phrase, on anticipe déjà sa suite. Stiegler étend la notion aux attentes collectives, aux désirs et aux projets. Il parle d’« archi-protention » pour désigner l’attente la plus fondamentale, celle de la mort et de l’avenir des générations, qui donne sens à l’existence. L’Anthropocène menace selon lui cette capacité à se projeter."
@@ -1228,6 +2010,17 @@
    ],
    "court": "Réserve de potentiel, antérieure à l’individu, dans laquelle celui-ci puise pour se former.",
    "long": "Concept de Simondon. Avant toute individuation, il existe un fond de tensions et de possibles non encore actualisés : le préindividuel. Chaque individu en garde une part, qui lui permet de continuer à se transformer et de s’associer aux autres. Chez Stiegler, ce fond comprend aussi les savoirs et les héritages transmis par les générations passées."
+  },
+  {
+   "terme": "Présentisme",
+   "type": "concept",
+   "formes": [
+    "présentisme",
+    "présentiste",
+    "présentistes"
+   ],
+   "court": "Chez François Hartog, rapport au temps où le présent domine et écrase le passé et l’avenir.",
+   "long": "Dans « Régimes d’historicité » (2003), Hartog montre que nos sociétés, après avoir été tournées vers le futur (le progrès), vivent dans un présent perpétuel : immédiateté, urgence, consommation, mémoire patrimoniale. Ce présentisme rend difficile de se projeter, ce que l’Anthropocène rend dramatique."
   },
   {
    "terme": "Présocratiques",
@@ -1253,7 +2046,18 @@
     "pansé",
     "pansent",
     "repanser",
-    "impansé"
+    "impansé",
+    "impansable",
+    "pansable",
+    "pansant",
+    "pansants",
+    "panseur",
+    "pansifs",
+    "pansons",
+    "repænser",
+    "impænsée",
+    "repansée",
+    "dépanse"
    ],
    "court": "Jeu de mots de Stiegler qui réunit penser et panser : penser, c’est soigner.",
    "long": "Stiegler écrit parfois « pænser » avec la ligature æ pour fusionner deux verbes : penser et panser (soigner une plaie). Le titre de sa série, « Qu’appelle-t-on panser ? », détourne celui de Heidegger « Qu’appelle-t-on penser ? ». L’idée : à l’époque de l’Anthropocène, la pensée doit devenir une forme de soin du monde, des savoirs et des générations."
@@ -1273,10 +2077,22 @@
    "type": "concept",
    "formes": [
     "rhizome",
-    "rhizomes"
+    "rhizomes",
+    "rhizomatisent"
    ],
    "court": "Tige souterraine qui se développe dans toutes les directions ; chez Deleuze et Guattari, modèle de pensée en réseau.",
    "long": "Dans « Mille plateaux » (1980), Deleuze et Guattari opposent le rhizome, sans centre ni hiérarchie, à l’arbre, qui organise tout à partir d’une racine. Le terme a été souvent appliqué à Internet."
+  },
+  {
+   "terme": "Réductionnisme",
+   "type": "concept",
+   "formes": [
+    "réductionnisme",
+    "réductionniste",
+    "réductionnistes"
+   ],
+   "court": "Démarche qui explique un phénomène complexe en le ramenant à ses éléments les plus simples.",
+   "long": "Expliquer la pensée par les neurones, ou la vie par les gènes, sont des démarches réductionnistes. Leurs critiques soulignent que certaines propriétés émergent seulement à un niveau d’organisation et sont irréductibles à leurs composants."
   },
   {
    "terme": "Rétention",
@@ -1291,6 +2107,30 @@
    ],
    "court": "Ce que la conscience retient du passé ; chez Stiegler, aussi la mémoire déposée dans les objets techniques.",
    "long": "Husserl distingue la rétention primaire (ce que l’on retient de la note qui vient de passer quand on écoute une mélodie) et la rétention secondaire (le souvenir). Stiegler ajoute la rétention tertiaire : la mémoire extériorisée dans des supports (écriture, photographie, enregistrement, données numériques). Ces supports conditionnent ce que nous retenons et attendons ; qui les contrôle contrôle en partie nos consciences."
+  },
+  {
+   "terme": "Révolution copernicienne",
+   "type": "concept",
+   "formes": [
+    "copernicien",
+    "copernicienne",
+    "galiléen",
+    "galiléenne"
+   ],
+   "court": "Renversement radical d’un point de vue, comme Copernic plaçant le Soleil au centre du monde.",
+   "long": "Copernic (1543) puis Galilée ont fait passer du géocentrisme à l’héliocentrisme. Kant appelle « révolution copernicienne » son renversement philosophique : ce sont les objets qui se règlent sur notre connaissance."
+  },
+  {
+   "terme": "Scientisme",
+   "type": "concept",
+   "formes": [
+    "scientisme",
+    "scientiste",
+    "scientistes",
+    "scientificité"
+   ],
+   "court": "Croyance selon laquelle la science suffit à résoudre toutes les questions, y compris morales et politiques.",
+   "long": "Le scientisme, très présent au XIXe siècle, fait de la science le seul savoir légitime et la clé du progrès humain. La scientificité est, plus neutrement, le caractère de ce qui répond aux exigences de la science."
   },
   {
    "terme": "Simondonien",
@@ -1309,10 +2149,57 @@
    "formes": [
     "skholè",
     "skholê",
-    "otium"
+    "otium",
+    "negotium"
    ],
    "court": "Mot grec (latin otium) : le loisir consacré à l’étude, à la pensée et à soi-même, d’où vient le mot école.",
    "long": "Pour les Grecs et les Romains, la skholè ou l’otium n’est pas l’oisiveté mais le temps libéré des tâches nécessaires, consacré à l’étude et à la vie de l’esprit. Stiegler défend la valeur de ce temps, menacé par la captation de l’attention."
+  },
+  {
+   "terme": "Souci de soi",
+   "type": "concept",
+   "formes": [
+    "epimelesthai sautou",
+    "épimelestai sautou",
+    "epimelesthai",
+    "épimelestai",
+    "sautou",
+    "souci de soi",
+    "epimeleia heautou"
+   ],
+   "court": "Précepte grec, « prendre soin de soi-même », étudié par Michel Foucault.",
+   "long": "L’expression grecque epimelesthai sautou (prendre soin de soi) désigne dans l’Antiquité un ensemble de pratiques : examen de conscience, exercices, lectures, méditation, par lesquelles on travaille sur soi pour devenir maître de soi et capable de vivre avec les autres. Foucault l’a étudiée dans « L’Herméneutique du sujet » (1982) et en a fait une « technique de soi ». Stiegler la relie au soin des savoirs et des supports techniques sur lesquels repose ce travail."
+  },
+  {
+   "terme": "Spectacularisation",
+   "type": "concept",
+   "formes": [
+    "spectacularisation",
+    "société du spectacle"
+   ],
+   "court": "Transformation de toute chose en spectacle à consommer, analysée par Guy Debord.",
+   "long": "Dans « La Société du spectacle » (1967), Guy Debord décrit une société où les relations entre les personnes passent par des images et où la vie réelle est remplacée par sa représentation marchande."
+  },
+  {
+   "terme": "Stimmung",
+   "type": "concept",
+   "formes": [
+    "Stimmungen",
+    "Stimmung"
+   ],
+   "court": "Mot allemand : la tonalité affective, l’humeur, par laquelle le monde nous apparaît.",
+   "long": "Chez Heidegger, les Stimmungen (angoisse, ennui, joie) ne sont pas de simples états psychologiques : elles révèlent notre manière d’être au monde."
+  },
+  {
+   "terme": "Stoikheia",
+   "type": "concept",
+   "formes": [
+    "stoikeia",
+    "stoikheia",
+    "stoicheia"
+   ],
+   "court": "Mot grec : les éléments, au sens des lettres de l’alphabet comme des éléments du monde.",
+   "long": "Les Grecs employaient le même mot pour les lettres, qui composent les mots, et pour les éléments (eau, air, terre, feu), qui composent les choses. Les « Éléments » d’Euclide portent ce titre."
   },
   {
    "terme": "Subjectivation",
@@ -1329,10 +2216,25 @@
    "formes": [
     "supplémentarité",
     "supplément",
-    "suppléments"
+    "suppléments",
+    "supplémentation"
    ],
    "court": "Chez Derrida, logique du supplément qui s’ajoute à une chose tout en révélant qu’elle était incomplète.",
    "long": "Derrida montre, à propos de l’écriture chez Rousseau, que ce qu’on présente comme un simple ajout extérieur (l’écriture par rapport à la parole) vient en réalité combler un manque originel. Stiegler applique cette logique à la technique : elle supplée un défaut d’origine de l’humain."
+  },
+  {
+   "terme": "Surhumain",
+   "type": "concept",
+   "formes": [
+    "surhumain",
+    "surhumaine",
+    "surhumains",
+    "übermenschlich",
+    "Übermensch",
+    "surhomme"
+   ],
+   "court": "Chez Nietzsche, le surhomme (Übermensch) : l’humain qui crée ses propres valeurs après la « mort de Dieu ».",
+   "long": "Dans « Ainsi parlait Zarathoustra », Nietzsche annonce le surhomme, qui dépassera l’homme en assumant le nihilisme et en affirmant la vie. Le transhumanisme reprend parfois le mot dans un sens technique très différent, ce que les penseurs critiques contestent."
   },
   {
    "terme": "Surmoi",
@@ -1366,6 +2268,32 @@
    "long": "Les survivalistes stockent nourriture, eau et équipements, apprennent l’autonomie, parfois s’arment, en prévision d’un effondrement. Stiegler y voit une réponse individualiste et désespérée, à l’opposé d’une réponse collective et politique."
   },
   {
+   "terme": "Symbolique et diabolique",
+   "type": "concept",
+   "formes": [
+    "sym-bolique",
+    "sym-boliques",
+    "dia-bolique",
+    "dia-boliques",
+    "diabole",
+    "diaboles",
+    "sym-biotiques"
+   ],
+   "court": "Chez Stiegler : ce qui relie (sym-bolique) et ce qui sépare (dia-bolique), d’après l’étymologie grecque.",
+   "long": "En grec, sumballein signifie « mettre ensemble » (le sumbolon était un objet coupé en deux dont les moitiés réunies permettaient de se reconnaître), tandis que diaballein signifie « jeter à travers, séparer, désunir », d’où le diable, « celui qui divise ». Stiegler emploie ces mots avec un trait d’union pour opposer ce qui crée du lien et du sens (les symboles, les savoirs partagés) à ce qui désintègre les sociétés (les diaboles). Pour lui, toute technique est à la fois l’un et l’autre : c’est sa logique pharmacologique."
+  },
+  {
+   "terme": "Techno-logique",
+   "type": "concept",
+   "formes": [
+    "techno-logique",
+    "techno-logiques",
+    "techno-logiquement"
+   ],
+   "court": "Graphie de Stiegler qui souligne que toute technique porte un logos : un langage, une logique, un savoir.",
+   "long": "En séparant « techno » et « logique », Stiegler rappelle que la technique n’est pas un simple outil neutre : elle est inséparable du logos, c’est-à-dire du langage, de la raison et des savoirs qui permettent de la comprendre et de la soigner. Il emploie de même « épistémo-logique », « patho-logique » ou « néguanthropo-logique »."
+  },
+  {
    "terme": "Technodiversité",
    "type": "concept",
    "formes": [
@@ -1376,6 +2304,31 @@
    ],
    "court": "Diversité des techniques et des manières de les insérer dans une culture et un milieu.",
    "long": "Notion développée notamment par le philosophe Yuk Hui, qui parle de cosmotechniques : chaque culture a pensé et organisé ses techniques à sa manière, en lien avec sa vision du monde. Contre une technique mondiale uniforme, il s’agit de préserver et d’inventer des façons localement différentes de vivre avec les techniques."
+  },
+  {
+   "terme": "Technofascisme",
+   "type": "concept",
+   "formes": [
+    "technofascisme",
+    "technofascistes",
+    "techno-fascistes",
+    "néo-fascistes"
+   ],
+   "court": "Alliance redoutée entre puissance technologique et autoritarisme politique.",
+   "long": "Le mot désigne la crainte d’un régime autoritaire s’appuyant sur la surveillance numérique, l’intelligence artificielle et les grandes plateformes pour contrôler la population."
+  },
+  {
+   "terme": "Technoscience",
+   "type": "concept",
+   "formes": [
+    "technoscience",
+    "technosciences",
+    "technoscientifique",
+    "techno-scientifique",
+    "techno-scientifiques"
+   ],
+   "court": "Science devenue inséparable de la technique et de l’industrie, qui produit ses objets plus qu’elle ne les observe.",
+   "long": "Le terme, popularisé par le philosophe Gilbert Hottois, désigne la recherche contemporaine où connaissance et intervention se confondent (biotechnologies, nucléaire, informatique), souvent liée aux intérêts économiques et militaires. Stiegler s’interroge sur la responsabilité de cette technoscience dans l’Anthropocène."
   },
   {
    "terme": "Technosphère",
@@ -1430,6 +2383,26 @@
    "long": "Theos est la racine de théologie, théisme, monothéisme. Stiegler l’emploie dans ses analyses de l’onto-théologie et du rapport entre technique et sacré."
   },
   {
+   "terme": "Therapeia",
+   "type": "concept",
+   "formes": [
+    "therapeia",
+    "thérapeia"
+   ],
+   "court": "Mot grec : le soin, le service rendu, d’où vient thérapie.",
+   "long": "La therapeia désigne chez les Grecs le soin apporté aux dieux, aux parents, au corps ou à l’âme. Stiegler y relie sa pensée du soin (panser) et de la pharmacologie."
+  },
+  {
+   "terme": "Thomisme",
+   "type": "concept",
+   "formes": [
+    "thomisme",
+    "thomiste"
+   ],
+   "court": "Philosophie de saint Thomas d’Aquin (XIIIe siècle), qui concilie la foi chrétienne et la pensée d’Aristote.",
+   "long": "Le thomisme a longtemps été la philosophie officielle de l’Église catholique. Il affirme l’accord de la raison et de la révélation."
+  },
+  {
    "terme": "Transcendantal",
    "type": "concept",
    "formes": [
@@ -1449,7 +2422,8 @@
     "transductif",
     "transductive",
     "transductives",
-    "transductivement"
+    "transductivement",
+    "trans-duction"
    ],
    "court": "Chez Simondon, propagation d’une structure de proche en proche, chaque étape servant de base à la suivante.",
    "long": "Gilbert Simondon prend l’exemple du cristal qui grandit dans une solution : chaque couche formée sert de germe à la suivante. Il appelle transduction ce mode de genèse, qu’il retrouve dans la pensée et dans la société. Une relation transductive est une relation qui constitue les termes qu’elle relie."
@@ -1460,8 +2434,7 @@
    "formes": [
     "transhumanisme",
     "transhumaniste",
-    "transhumanistes",
-    "surhumain"
+    "transhumanistes"
    ],
    "court": "Mouvement qui veut dépasser les limites humaines (vieillesse, mort) grâce aux technologies.",
    "long": "Le transhumanisme, très présent dans la Silicon Valley, promet d’augmenter l’humain par la biotechnologie, l’intelligence artificielle ou la fusion avec les machines. Stiegler le critique comme une fuite en avant qui ignore l’ambivalence pharmacologique des techniques et la question des savoirs."
@@ -1473,7 +2446,11 @@
     "transindividuation",
     "transindividuel",
     "transindividuelle",
-    "transindividuels"
+    "transindividuels",
+    "transindividuant",
+    "transindividué",
+    "transindividuellement",
+    "transdividuation"
    ],
    "court": "Processus par lequel des individus élaborent ensemble des significations communes.",
    "long": "Notion issue de Simondon et développée par Stiegler. Quand des personnes échangent, débattent, apprennent ensemble, elles produisent du sens partagé (un langage, des savoirs, des règles) qui les dépasse et les relie : le transindividuel. Stiegler s’inquiète de ce que les grandes plateformes numériques fabriquent ce sens commun par calcul, à la place des communautés elles-mêmes."
@@ -1483,10 +2460,23 @@
    "type": "concept",
    "formes": [
     "traumatype",
-    "traumatypes"
+    "traumatypes",
+    "traumatypiques"
    ],
    "court": "Chez Stiegler, une image ou un récit choquant qui frappe les esprits et provoque une rupture.",
    "long": "Néologisme de Stiegler, construit en écho à stéréotype : alors que le stéréotype est une forme figée et rassurante, le traumatype est un choc (une catastrophe, une image violente) qui déstabilise et peut ouvrir à une transformation, ou au contraire paralyser."
+  },
+  {
+   "terme": "Téléologie",
+   "type": "concept",
+   "formes": [
+    "téléologie",
+    "téléologique",
+    "téléologiques",
+    "téléologisme"
+   ],
+   "court": "Explication des choses par leur fin, leur but.",
+   "long": "Du grec telos (fin) et logos (discours). Une explication téléologique dit que l’œil existe « pour » voir. La biologie moderne remplace la téléologie par la téléonomie, qui explique l’apparence de finalité par l’évolution."
   },
   {
    "terme": "Téléonomie",
@@ -1494,7 +2484,8 @@
    "formes": [
     "téléonomie",
     "téléonomique",
-    "téléonomiques"
+    "téléonomiques",
+    "téléo-nomiquement"
    ],
    "court": "Apparence de finalité des êtres vivants, expliquée par la sélection naturelle et non par un but.",
    "long": "Terme utilisé par le biologiste Jacques Monod (« Le Hasard et la nécessité », 1970) : les organismes semblent agir en vue de fins (l’œil est fait pour voir), mais cette finalité apparente résulte de mécanismes physico-chimiques et de l’évolution, non d’une intention. Stiegler discute ce concept pour distinguer la vie biologique de la vie technique."
@@ -1505,7 +2496,8 @@
    "formes": [
     "ubris",
     "hubris",
-    "hybris"
+    "hybris",
+    "démesures"
    ],
    "court": "Démesure, orgueil excessif qui pousse à franchir les limites et attire le châtiment.",
    "long": "Notion de la tragédie et de la morale grecques : l’ubris est la faute de celui qui se croit au-dessus de sa condition. Elle est punie par Némésis, la déesse de la juste rétribution. Stiegler qualifie de démesure planétaire la destruction des équilibres terrestres par le capitalisme industriel et numérique."
@@ -1516,10 +2508,48 @@
    "formes": [
     "villes en transition",
     "Transition Town",
-    "Transition Towns"
+    "Transition Towns",
+    "transitionneur",
+    "transitionneurs"
    ],
    "court": "Mouvement des villes en transition : initiatives locales pour préparer l’après-pétrole.",
    "long": "Fondé en 2006 par Rob Hopkins à Totnes, en Angleterre, le mouvement des villes en transition rassemble des habitants qui développent l’autonomie locale (alimentation, énergie, monnaies locales) face au pic pétrolier et au changement climatique."
+  },
+  {
+   "terme": "Vitalisme",
+   "type": "concept",
+   "formes": [
+    "vitalisme",
+    "vitaliste",
+    "vitalistes",
+    "mécanicisme",
+    "mécaniste",
+    "mécanistes",
+    "finalisme"
+   ],
+   "court": "Le vitalisme explique la vie par un principe propre ; le mécanisme, par les seules lois physiques.",
+   "long": "Le vitalisme soutient que le vivant obéit à une force ou à un principe irréductible à la physique et à la chimie ; le mécanisme (ou mécanicisme) l’explique entièrement par des causes matérielles, comme une machine. Le finalisme attribue aux phénomènes un but. Bergson et Canguilhem ont été qualifiés de vitalistes, tout en dépassant cette opposition."
+  },
+  {
+   "terme": "Écocide",
+   "type": "concept",
+   "formes": [
+    "écocide",
+    "écocides"
+   ],
+   "court": "Destruction grave et étendue d’un écosystème, qu’on cherche à faire reconnaître comme crime.",
+   "long": "Le terme apparaît pendant la guerre du Vietnam, à propos de l’agent orange. Des juristes militent pour que l’écocide devienne un crime international, au même titre que le génocide."
+  },
+  {
+   "terme": "Écologisme",
+   "type": "concept",
+   "formes": [
+    "écologisme",
+    "écologiste",
+    "écologistes"
+   ],
+   "court": "Mouvement politique et intellectuel qui fait de la préservation du milieu naturel une priorité.",
+   "long": "L’écologie politique naît dans les années 1960-1970 (René Dumont, André Gorz). Stiegler discute certains écologismes qu’il juge dépolitisés ou fatalistes."
   },
   {
    "terme": "Économie contributive",
@@ -1545,6 +2575,17 @@
    "long": "Née dans les années 1990 aux États-Unis, l’écopsychologie soutient que la santé psychique dépend de notre relation au monde vivant et que la crise écologique est aussi une crise de cette relation. Joanna Macy en est une figure."
   },
   {
+   "terme": "Épiphylogenèse",
+   "type": "concept",
+   "formes": [
+    "épiphylogenèse",
+    "épiphylogénétique",
+    "épiphylogénétiques"
+   ],
+   "court": "Concept central de Stiegler : la mémoire de l’espèce humaine transmise par les objets techniques, ni génétique ni individuelle.",
+   "long": "Stiegler distingue trois mémoires : la mémoire génétique (transmise par l’ADN, la phylogenèse), la mémoire individuelle (acquise par l’expérience et perdue à la mort), et une troisième, propre à l’humain : la mémoire déposée dans les outils, l’écriture et tous les artefacts, qui se transmet de génération en génération. C’est l’épiphylogenèse, développée dans « La Technique et le temps » (1994)."
+  },
+  {
    "terme": "Épistémè",
    "type": "concept",
    "formes": [
@@ -1563,7 +2604,9 @@
     "épokhale",
     "épokhaux",
     "épokhè",
-    "redoublement épokhal"
+    "redoublement épokhal",
+    "épokhales",
+    "épokhalité"
    ],
    "court": "Qui fait époque : se dit d’un bouleversement technique qui suspend un ordre ancien puis en fonde un nouveau.",
    "long": "Du grec épokhè, suspension, arrêt. Stiegler décrit chaque grande innovation technique comme un « double redoublement épokhal » : d’abord elle suspend les savoirs et les règles existants (choc), puis, si la société parvient à se l’approprier, elle donne naissance à de nouveaux savoirs et à une nouvelle époque. La disruption est un premier temps qui empêche le second."
@@ -1579,6 +2622,26 @@
    "long": "L’État-nation associe souveraineté politique, territoire et identité nationale. La mondialisation et l’Anthropocène posent des problèmes qui dépassent son échelle."
   },
   {
+   "terme": "Öffentlichkeit",
+   "type": "concept",
+   "formes": [
+    "Öffentlichkeit"
+   ],
+   "court": "Mot allemand : l’espace public, la sphère où les citoyens débattent librement des affaires communes.",
+   "long": "Le philosophe Jürgen Habermas a fait de l’Öffentlichkeit le sujet de son livre « L’Espace public » (1962) : il y décrit la naissance, au XVIIIe siècle, d’un espace de discussion rationnelle (cafés, salons, presse) entre l’État et la vie privée, puis sa dégradation par les médias de masse et la publicité. Kant liait déjà les Lumières à l’« usage public de la raison »."
+  },
+  {
+   "terme": "Œcoumène",
+   "type": "concept",
+   "formes": [
+    "œcoumène",
+    "écoumène",
+    "oekoumène"
+   ],
+   "court": "L’ensemble des terres habitées par l’humanité ; chez Augustin Berque, la relation humaine à la Terre.",
+   "long": "Pour les géographes grecs, l’oikoumenè est la partie habitée du monde. Augustin Berque en fait un concept (« Écoumène », 2000) : la Terre en tant qu’elle est habitée et investie de sens par les humains."
+  },
+  {
    "terme": "Annihilation",
    "type": "mot",
    "formes": [
@@ -1588,6 +2651,20 @@
    ],
    "court": "Destruction totale, réduction à néant.",
    "long": "Du latin nihil, rien. Le mot évoque l’anéantissement complet, par exemple la menace d’annihilation nucléaire pendant la guerre froide, que le livre évoque à propos de la crise de Cuba."
+  },
+  {
+   "terme": "Anthropisation",
+   "type": "mot",
+   "formes": [
+    "anthropisation",
+    "anthropiser",
+    "anthropisé",
+    "anthropisés",
+    "anthropisée",
+    "anthropisées"
+   ],
+   "court": "Transformation d’un milieu naturel par l’action humaine.",
+   "long": "Une forêt exploitée, un fleuve endigué, un sol cultivé sont des milieux anthropisés. Le degré d’anthropisation mesure l’empreinte humaine sur un paysage ou un écosystème."
   },
   {
    "terme": "Antinomie",
@@ -1605,7 +2682,9 @@
    "formes": [
     "apodictique",
     "apodictiques",
-    "apodeixis"
+    "apodeixis",
+    "apodicticité",
+    "apodictiquement"
    ],
    "court": "Qui est nécessairement vrai et démontré, sans contestation possible.",
    "long": "Du grec apodeixis, démonstration. Chez Aristote puis chez Kant, un jugement apodictique est un jugement nécessaire, valant universellement, comme une démonstration mathématique."
@@ -1620,6 +2699,16 @@
    ],
    "court": "Difficulté logique sans issue apparente, contradiction qu’on ne parvient pas à résoudre.",
    "long": "Du grec aporia, absence de passage. Les dialogues de Platon se terminent souvent par une aporie : on ne trouve pas de définition satisfaisante. Le terme désigne toute impasse de la pensée."
+  },
+  {
+   "terme": "Architectonique",
+   "type": "mot",
+   "formes": [
+    "architectonique",
+    "architectoniques"
+   ],
+   "court": "Art de construire un système de pensée cohérent ; chez Kant, l’art des systèmes.",
+   "long": "Kant appelle architectonique de la raison pure l’organisation systématique de toutes les connaissances sous une idée d’ensemble."
   },
   {
    "terme": "Archivation",
@@ -1665,17 +2754,14 @@
    "long": "Les biomes sont les grands ensembles de la biosphère : toundra, savane, forêts tempérées, récifs coralliens. Le réchauffement climatique menace de les faire basculer d’un état à un autre."
   },
   {
-   "terme": "Catabolisme",
+   "terme": "Casuistique",
    "type": "mot",
    "formes": [
-    "catabolisme",
-    "catabolique",
-    "anabolisme",
-    "métabolisme",
-    "métabolismes"
+    "casuistique",
+    "casuistiques"
    ],
-   "court": "Phase du métabolisme qui dégrade les molécules pour produire de l’énergie (l’anabolisme construit).",
-   "long": "En biologie, le métabolisme comprend l’anabolisme (synthèse de molécules complexes) et le catabolisme (dégradation). Par métaphore, on parle de catabolisme social pour désigner une société qui consume ses propres ressources plus qu’elle n’en reconstitue."
+   "court": "Étude des cas particuliers de conscience ; au sens péjoratif, raisonnement subtil et spécieux.",
+   "long": "À l’origine, la casuistique appliquait les principes moraux aux situations concrètes. Pascal, dans « Les Provinciales », l’a attaquée comme un art de justifier n’importe quoi."
   },
   {
    "terme": "Causalité",
@@ -1685,7 +2771,8 @@
     "causalités",
     "causation",
     "quasi-causale",
-    "quasi-cause"
+    "quasi-cause",
+    "causalement"
    ],
    "court": "Relation qui lie une cause à son effet.",
    "long": "Deleuze, repris par Stiegler, parle de quasi-causalité : la capacité de faire d’un accident subi l’occasion d’une transformation choisie, comme si l’on en devenait la cause."
@@ -1699,7 +2786,9 @@
     "computationnels",
     "computationnelles",
     "computationnaliste",
-    "comput"
+    "comput",
+    "computationnalisme",
+    "computationnalistes"
    ],
    "court": "Qui relève du calcul informatique.",
    "long": "Du latin computare, calculer. Se dit de ce qui est traité par ordinateur ou de théories qui conçoivent la pensée comme un calcul (computationnalisme). Stiegler critique le « capitalisme computationnel », qui exploite le calcul massif des données."
@@ -1755,7 +2844,8 @@
    "type": "mot",
    "formes": [
     "dyade",
-    "dyades"
+    "dyades",
+    "dyadique"
    ],
    "court": "Couple de deux éléments liés l’un à l’autre.",
    "long": "En philosophie et en psychologie, une dyade est une relation à deux (la mère et l’enfant chez Winnicott). Le mot sert à penser des termes qui n’existent que dans leur relation."
@@ -1790,6 +2880,25 @@
    "long": "Depuis les années 1980, les marchés financiers ont pris une place croissante : les entreprises sont gérées pour la valeur actionnariale, l’épargne et l’endettement se multiplient. Stiegler y voit une cause majeure du court-termisme qui empêche de prendre soin de l’avenir."
   },
   {
+   "terme": "Gretaphobie",
+   "type": "mot",
+   "formes": [
+    "gretaphobie"
+   ],
+   "court": "Hostilité, souvent virulente, dirigée contre Greta Thunberg.",
+   "long": "Le mot désigne les attaques et moqueries dont la jeune militante a fait l’objet, souvent sans discussion du fond de ses propos, ce que Stiegler analyse comme un symptôme du déni de la démesure."
+  },
+  {
+   "terme": "Heuristique",
+   "type": "mot",
+   "formes": [
+    "heuristique",
+    "heuristiques"
+   ],
+   "court": "Qui aide à découvrir ; méthode de recherche approximative mais efficace.",
+   "long": "Du grec heuriskein (trouver, d’où « eurêka »). Une démarche heuristique sert à orienter la recherche, sans garantir le résultat."
+  },
+  {
    "terme": "Hominisation",
    "type": "mot",
    "formes": [
@@ -1802,10 +2911,27 @@
    "terme": "Hostis",
    "type": "mot",
    "formes": [
-    "hostis"
+    "hostis",
+    "hospes",
+    "hospitis",
+    "hostia",
+    "hostire"
    ],
    "court": "Mot latin : l’ennemi public, mais à l’origine l’étranger, aussi l’hôte.",
    "long": "Le latin hostis a donné à la fois hostile et hôte. Carl Schmitt fonde sa définition du politique sur la distinction entre l’ami et l’ennemi public (hostis). Derrida a exploré cette ambivalence entre hospitalité et hostilité."
+  },
+  {
+   "terme": "Hydrosphère et lithosphère",
+   "type": "mot",
+   "formes": [
+    "hydrosphère",
+    "lithosphère",
+    "exosphère",
+    "exosphérique",
+    "exosphériques"
+   ],
+   "court": "Les « sphères » de la Terre : l’eau (hydrosphère), la roche (lithosphère), l’air (atmosphère).",
+   "long": "Les géosciences décrivent la Terre comme un ensemble d’enveloppes en interaction : la lithosphère (croûte rocheuse), l’hydrosphère (océans, rivières, glaces), l’atmosphère (dont l’exosphère est la couche la plus haute) et la biosphère (le vivant). Stiegler y ajoute la technosphère, couche des systèmes techniques, et parle d’exosphère pour l’ensemble des milieux artificiels produits par l’exosomatisation."
   },
   {
    "terme": "Hétéronomie",
@@ -1814,7 +2940,8 @@
     "hétéronomie",
     "hétéronome",
     "hétéronomes",
-    "autonomie"
+    "autonomie",
+    "autonomia"
    ],
    "court": "Le fait de recevoir sa loi de l’extérieur, par opposition à l’autonomie.",
    "long": "Chez Kant, une volonté hétéronome obéit à des causes extérieures (désirs, autorité) au lieu de se donner sa propre loi. Stiegler montre que l’autonomie suppose toujours des supports extérieurs (livres, institutions) : il n’y a pas d’autonomie pure."
@@ -1826,7 +2953,8 @@
     "infantilisation",
     "infantiliser",
     "infantile",
-    "infantiles"
+    "infantiles",
+    "infantilisés"
    ],
    "court": "Le fait de traiter des adultes comme des enfants, ou de les rendre irresponsables.",
    "long": "Stiegler accuse la société de consommation et les médias d’infantiliser les adultes en flattant leurs pulsions et en les dispensant de penser, tandis que la jeunesse, comme Greta Thunberg, rappelle les adultes à leurs responsabilités."
@@ -1840,7 +2968,8 @@
     "intergénérationnels",
     "intergénérationnelles",
     "transgénérationnels",
-    "transgénérationnel"
+    "transgénérationnel",
+    "transgénérationnelles"
    ],
    "court": "Qui concerne les relations entre générations.",
    "long": "Au cœur du livre : la question de ce que les générations adultes transmettent et laissent aux générations suivantes, et la révolte de la jeunesse face à un monde abîmé."
@@ -1858,11 +2987,22 @@
    "long": "La thermodynamique a introduit en physique la flèche du temps : certains processus (la dissipation de la chaleur) sont irréversibles. Le changement climatique et l’extinction des espèces sont des transformations irréversibles à l’échelle humaine."
   },
   {
+   "terme": "Jeunisme",
+   "type": "mot",
+   "formes": [
+    "jeunisme"
+   ],
+   "court": "Culte de la jeunesse et dévalorisation de l’âge et de l’expérience.",
+   "long": "Le mot critique une société qui valorise l’apparence jeune et la nouveauté. Stiegler l’évoque à propos des réactions à la jeunesse de Greta Thunberg, ni idéalisée ni méprisée."
+  },
+  {
    "terme": "Libido sciendi",
    "type": "mot",
    "formes": [
     "sciendi",
-    "libido sciendi"
+    "libido sciendi",
+    "dominandi",
+    "libido dominandi"
    ],
    "court": "Libido sciendi : expression latine désignant le désir de savoir.",
    "long": "Saint Augustin distinguait trois concupiscences : celle de la chair, celle du savoir (libido sciendi) et celle de dominer. Stiegler emploie l’expression pour désigner le désir de connaître, qu’il faut cultiver plutôt qu’exploiter."
@@ -1890,12 +3030,37 @@
    "long": "D’origine religieuse (judaïsme, christianisme), le messianisme désigne plus largement toute croyance en une rédemption à venir. Walter Benjamin et Derrida ont pensé un messianisme sans contenu religieux, ouvert à l’imprévisible."
   },
   {
+   "terme": "Mnémotechnique",
+   "type": "mot",
+   "formes": [
+    "mnémotechnique",
+    "mnémotechnie",
+    "mnémotechnologie",
+    "mnémotechnologies",
+    "mnémotechniques"
+   ],
+   "court": "Technique qui aide la mémoire ; chez Stiegler, aussi les technologies industrielles de la mémoire.",
+   "long": "Des moyens mnémotechniques (rimes, images) aux mnémotechnologies (enregistrement, numérique), Stiegler décrit l’industrialisation de la mémoire, qui passe des mains des individus et des communautés à celles des industries."
+  },
+  {
+   "terme": "Morphogenèse",
+   "type": "mot",
+   "formes": [
+    "morphogenèse",
+    "morphogénétique",
+    "morphogénétiques"
+   ],
+   "court": "Processus par lequel une forme vivante (organe, organisme) se développe.",
+   "long": "La morphogenèse étudie comment les formes du vivant apparaissent et se structurent. Alan Turing lui a consacré un article célèbre en 1952. Par extension, on parle de morphogenèse sociale ou technique."
+  },
+  {
    "terme": "Mystagogie",
    "type": "mot",
    "formes": [
     "mystagogie",
     "mystagogue",
-    "mystagogues"
+    "mystagogues",
+    "mystagogiques"
    ],
    "court": "Initiation aux mystères religieux ; par extension, discours obscur qui prétend révéler des secrets.",
    "long": "Dans l’Antiquité, le mystagogue initiait aux mystères (comme ceux d’Éleusis). Kant emploie le mot de façon critique contre les philosophes qui prétendent accéder à des vérités par une intuition mystique plutôt que par la raison."
@@ -1909,6 +3074,29 @@
    ],
    "court": "Absence de croyance ; chez Stiegler, perte de confiance dans l’avenir et les institutions.",
    "long": "Stiegler a intitulé une série d’ouvrages « Mécréance et discrédit » (2004-2006) : il y décrit une société où plus personne ne croit en rien, ni en l’avenir, ni dans la politique, ni dans le crédit, faute de savoirs et de désir partagés."
+  },
+  {
+   "terme": "Métabolisme",
+   "type": "mot",
+   "formes": [
+    "métabolisme",
+    "métabolismes",
+    "métabolique",
+    "métaboliques",
+    "méta-bolique",
+    "méta-boliques",
+    "métabolisation",
+    "métabolise",
+    "métabolisent",
+    "catabolisme",
+    "catabolique",
+    "cataboliques",
+    "anabolisme",
+    "anabolique",
+    "anaboliques"
+   ],
+   "court": "Ensemble des transformations par lesquelles un organisme assimile ce qu’il prend à son milieu et rejette ses déchets.",
+   "long": "Le métabolisme a deux faces : l’anabolisme, qui construit (le corps fabrique ses propres tissus à partir de la nourriture), et le catabolisme, qui dégrade (il décompose les molécules pour en tirer de l’énergie et produit des déchets). Par extension, on parle du métabolisme d’une ville ou d’une économie : ce qu’elle consomme, transforme et rejette. Stiegler écrit parfois « méta-bolique » avec un trait d’union pour rappeler l’étymologie grecque (metaballein, changer, transformer) et rapprocher le mot de « sym-bolique » et « dia-bolique »."
   },
   {
    "terme": "Neurosciences",
@@ -1935,6 +3123,58 @@
    "long": "Nietzsche a fait du nihilisme le diagnostic de la civilisation européenne : la « mort de Dieu » laisse les valeurs supérieures sans fondement. Stiegler parle d’un nihilisme contemporain lié à la perte de sens produite par la disruption."
   },
   {
+   "terme": "Ordalie",
+   "type": "mot",
+   "formes": [
+    "ordalie",
+    "ordalies",
+    "ordalique",
+    "ordaliques"
+   ],
+   "court": "Épreuve physique (feu, eau) imposée au Moyen Âge pour que Dieu désigne l’innocent ou le coupable.",
+   "long": "Par extension, une conduite ordalique est une prise de risque extrême par laquelle on s’en remet au destin, comme pour savoir si l’on mérite de vivre."
+  },
+  {
+   "terme": "Orthogenèse",
+   "type": "mot",
+   "formes": [
+    "orthogenèse",
+    "orthogénétique",
+    "orthogénétiques"
+   ],
+   "court": "Hypothèse ancienne selon laquelle l’évolution suivrait une direction déterminée, vers un but.",
+   "long": "L’orthogenèse, défendue par certains biologistes à la fin du XIXe siècle, suppose que les lignées évoluent en ligne droite vers des formes de plus en plus complexes. Elle a été abandonnée au profit de la théorie darwinienne, qui fait place au hasard et à la contingence."
+  },
+  {
+   "terme": "Phagocyter",
+   "type": "mot",
+   "formes": [
+    "phagocytant",
+    "phagocyter",
+    "phagocyte",
+    "phagocytent",
+    "phagocyté",
+    "phagocytée",
+    "phagocytose"
+   ],
+   "court": "Absorber et détruire, comme une cellule qui englobe et digère une bactérie.",
+   "long": "En biologie, la phagocytose est le mécanisme par lequel certaines cellules (les phagocytes, comme les globules blancs) englobent un corps étranger pour le digérer. Au sens figuré, phagocyter signifie absorber quelque chose au point de le faire disparaître : une grande entreprise phagocyte ses concurrents, une industrie phagocyte la culture qu’elle exploite."
+  },
+  {
+   "terme": "Phylogenèse et ontogenèse",
+   "type": "mot",
+   "formes": [
+    "phylogenèse",
+    "phylogénétique",
+    "phylogénétiques",
+    "ontogenèse",
+    "ontogénétique",
+    "ontogénétiques"
+   ],
+   "court": "La phylogenèse est l’évolution d’une espèce ; l’ontogenèse, le développement d’un individu, de l’œuf à l’adulte.",
+   "long": "En biologie, la phylogenèse retrace l’histoire évolutive des espèces et leurs liens de parenté, tandis que l’ontogenèse décrit la formation d’un organisme au cours de sa vie. Stiegler ajoute à ces deux processus l’épiphylogenèse, l’évolution transmise par les techniques."
+  },
+  {
    "terme": "Pulsion",
    "type": "mot",
    "formes": [
@@ -1943,10 +3183,20 @@
     "pulsionnel",
     "pulsionnelle",
     "pulsionnels",
-    "pulsionnelles"
+    "pulsionnelles",
+    "pulsionnalisation"
    ],
    "court": "Poussée intérieure qui cherche une satisfaction immédiate, distincte du désir durable.",
    "long": "Notion freudienne : la pulsion est une énergie qui pousse à agir pour réduire une tension. Stiegler oppose les pulsions, que le capitalisme consumériste stimule et épuise, au désir, qui s’attache à des objets singuliers et durables et suppose le soin."
+  },
+  {
+   "terme": "Quiddité",
+   "type": "mot",
+   "formes": [
+    "quiddité"
+   ],
+   "court": "Ce qui fait qu’une chose est ce qu’elle est : son essence.",
+   "long": "Terme de la philosophie médiévale, du latin quid (quoi) : la quiddité répond à la question « qu’est-ce que c’est ? »."
   },
   {
    "terme": "Res cogitans et res extensa",
@@ -2008,7 +3258,11 @@
    "formes": [
     "scalabilité",
     "scalable",
-    "scalables"
+    "scalables",
+    "scalabilités",
+    "scalaires",
+    "multiscalaire",
+    "multiscalaires"
    ],
    "court": "Capacité d’un système à changer d’échelle sans changer de nature.",
    "long": "Terme d’informatique et d’économie : un service scalable peut passer de mille à des millions d’utilisateurs sans être repensé. L’anthropologue Anna Tsing critique cette logique, qui écrase la diversité des situations locales."
@@ -2030,7 +3284,9 @@
     "synchronique",
     "diachronique",
     "synchronie",
-    "diachronie"
+    "diachronie",
+    "synchroniques",
+    "diachroniques"
    ],
    "court": "Synchronique : étudié à un moment donné ; diachronique : étudié dans son évolution au fil du temps.",
    "long": "Distinction introduite par le linguiste Ferdinand de Saussure pour l’étude des langues. Stiegler l’applique aux sociétés : elles doivent articuler le partage d’un même temps (synchronie) et la singularité de chacun (diachronie)."
@@ -2081,7 +3337,8 @@
    "formes": [
     "totalisation",
     "totalisable",
-    "totalisant"
+    "totalisant",
+    "totalisations"
    ],
    "court": "Le fait de réunir tous les éléments en un tout achevé et maîtrisé.",
    "long": "Stiegler critique les pensées et les systèmes qui prétendent tout englober et tout calculer, contre l’idée d’un monde toujours ouvert et inachevé."
@@ -2097,6 +3354,28 @@
    "long": "Le terme a été popularisé en France par le rapport Nora-Minc (1978) sur « L’informatisation de la société ». Il désigne les services informatiques accessibles à distance par réseau."
   },
   {
+   "terme": "Tératologie",
+   "type": "mot",
+   "formes": [
+    "tératologique",
+    "tératologiques",
+    "tératologie"
+   ],
+   "court": "Étude des malformations et des monstres ; tératologique : monstrueux.",
+   "long": "Du grec teras (monstre, prodige). Canguilhem a réfléchi à la tératologie pour penser le normal et le pathologique."
+  },
+  {
+   "terme": "Épigénétique",
+   "type": "mot",
+   "formes": [
+    "épigénétique",
+    "épigénétiques",
+    "épigenèse"
+   ],
+   "court": "Ce qui modifie l’expression des gènes sans changer l’ADN, sous l’effet du milieu.",
+   "long": "L’épigénétique étudie comment l’environnement (alimentation, stress, toxiques) active ou réprime certains gènes, parfois de façon transmissible. Stiegler s’y intéresse pour penser l’articulation entre la vie biologique et les milieux techniques et sociaux."
+  },
+  {
    "terme": "Épistémique",
    "type": "mot",
    "formes": [
@@ -2104,7 +3383,9 @@
     "épistémiques",
     "épistémologique",
     "épistémologiques",
-    "épistémologie"
+    "épistémologie",
+    "épistémologies",
+    "épistémo-logiquement"
    ],
    "court": "Qui concerne la connaissance, ses conditions et sa validité.",
    "long": "L’épistémologie est l’étude critique des sciences : leurs méthodes, leurs fondements, leur portée. Est épistémique ce qui relève de la connaissance comme telle. Stiegler interroge la crise épistémique produite par l’Anthropocène : les sciences doivent repenser leurs propres présupposés."
@@ -2154,7 +3435,8 @@
    "type": "personne",
    "formes": [
     "Albert Einstein",
-    "Einstein"
+    "Einstein",
+    "einsteinienne"
    ],
    "court": "Physicien d’origine allemande (1879-1955), auteur de la théorie de la relativité.",
    "long": "Prix Nobel de physique en 1921, Einstein a transformé notre compréhension de l’espace, du temps et de l’énergie. Il a aussi alerté sur les dangers de l’arme nucléaire."
@@ -2234,7 +3516,8 @@
    "formes": [
     "Aristote",
     "aristotélicien",
-    "aristotélicienne"
+    "aristotélicienne",
+    "aristotéliciennes"
    ],
    "court": "Philosophe grec (384-322 av. J.-C.), élève de Platon, fondateur de nombreuses sciences.",
    "long": "Aristote a écrit sur la logique, la physique, la biologie, la politique, l’éthique et la poétique. Il distingue les différentes formes de savoir (tekhnè, épistémè) et fait de l’amitié (philia) le lien de la cité."
@@ -2248,6 +3531,16 @@
    ],
    "court": "Historien britannique (1889-1975), qui a étudié la naissance et le déclin des civilisations.",
    "long": "Dans son monumental « A Study of History », Arnold J. Toynbee compare une vingtaine de civilisations et soutient qu’elles naissent en répondant à des défis et déclinent quand elles n’y parviennent plus."
+  },
+  {
+   "terme": "Arthur Eddington",
+   "type": "personne",
+   "formes": [
+    "eddingtonnienne",
+    "Eddington"
+   ],
+   "court": "Astrophysicien britannique (1882-1944), qui a forgé l’expression « flèche du temps ».",
+   "long": "Arthur Eddington a confirmé en 1919 la relativité générale d’Einstein en observant une éclipse, et a nommé « flèche du temps » l’irréversibilité liée à la croissance de l’entropie."
   },
   {
    "terme": "Augustin Berque",
@@ -2274,7 +3567,9 @@
    "type": "personne",
    "formes": [
     "aède",
-    "aèdes"
+    "aèdes",
+    "rhapsodes",
+    "rhapsode"
    ],
    "court": "Poète chanteur de la Grèce archaïque, qui récitait les épopées en s’accompagnant d’une lyre.",
    "long": "Les aèdes, comme Homère selon la tradition, transmettaient oralement les récits héroïques et les généalogies des dieux. Ils étaient les gardiens de la mémoire collective avant la généralisation de l’écriture."
@@ -2464,7 +3759,9 @@
    "type": "personne",
    "formes": [
     "Ferdinand de Saussure",
-    "Saussure"
+    "Saussure",
+    "saussurien",
+    "saussurienne"
    ],
    "court": "Linguiste suisse (1857-1913), fondateur de la linguistique moderne.",
    "long": "Saussure a distingué la langue et la parole, l’approche synchronique et diachronique, et défini le signe comme l’union d’un signifiant et d’un signifié."
@@ -2713,6 +4010,17 @@
    "long": "Dans le mythe de Protagoras, Zeus charge Hermès d’apporter aux hommes la pudeur et la justice. Hermès a donné son nom à l’herméneutique, l’art d’interpréter."
   },
   {
+   "terme": "Hidetaka Ishida",
+   "type": "personne",
+   "formes": [
+    "Hidetaka Ishida",
+    "Hidetaka",
+    "Ishida"
+   ],
+   "court": "Philosophe japonais, spécialiste des médias et de la sémiotique, proche de Stiegler.",
+   "long": "Professeur à l’université de Tokyo, Hidetaka Ishida a travaillé sur les théories des médias et de l’information et a collaboré avec Bernard Stiegler."
+  },
+  {
    "terme": "Homère",
    "type": "personne",
    "formes": [
@@ -2789,7 +4097,8 @@
     "Jacques Lacan",
     "Lacan",
     "lacanien",
-    "lacanienne"
+    "lacanienne",
+    "lacaniens"
    ],
    "court": "Psychanalyste français (1901-1981), qui a relu Freud à partir de la linguistique.",
    "long": "Lacan a soutenu que « l’inconscient est structuré comme un langage » et développé les notions de stade du miroir, de symbolique, d’imaginaire et de réel."
@@ -3013,7 +4322,8 @@
     "Marx",
     "marxiste",
     "marxistes",
-    "marxisme"
+    "marxisme",
+    "marxienne"
    ],
    "court": "Philosophe et économiste allemand (1818-1883), critique du capitalisme.",
    "long": "Auteur avec Engels du « Manifeste du parti communiste » (1848) et du « Capital » (1867), Marx analyse l’exploitation du travail, l’accumulation du capital et le rôle des machines. Stiegler reprend et généralise son concept de prolétarisation."
@@ -3067,6 +4377,17 @@
    ],
    "court": "Psychologue soviétique (1896-1934), qui a montré le rôle des outils et du langage dans le développement.",
    "long": "Pour Vygotsky, la pensée de l’enfant se développe grâce aux outils culturels, d’abord le langage, et à l’aide des autres (la « zone proximale de développement »)."
+  },
+  {
+   "terme": "Logographe",
+   "type": "personne",
+   "formes": [
+    "logographe",
+    "logographes",
+    "logographique"
+   ],
+   "court": "Dans la Grèce antique, rédacteur de discours pour autrui, ou premier prosateur historien.",
+   "long": "À Athènes, les logographes écrivaient contre rémunération les plaidoiries que les citoyens prononçaient eux-mêmes au tribunal. Platon les rapproche des sophistes, accusés de mettre l’écriture au service de la persuasion."
   },
   {
    "terme": "Louis Althusser",
@@ -3157,7 +4478,8 @@
     "Martin Heidegger",
     "Heidegger",
     "heideggérien",
-    "heideggérienne"
+    "heideggérienne",
+    "heideggériens"
    ],
    "court": "Philosophe allemand (1889-1976), auteur d’« Être et temps », penseur de l’être et de la technique.",
    "long": "Heidegger a profondément marqué la philosophie du XXe siècle par sa question de l’être et sa critique de la technique moderne (le Gestell). Son engagement nazi en fait une figure controversée. Stiegler le discute constamment, tout en lui reprochant de mépriser la technique."
@@ -3240,6 +4562,16 @@
    ],
    "court": "Géographe français, né en 1960, spécialiste de l’urbain et de la mondialisation.",
    "long": "Michel Lussault étudie la manière dont les humains habitent et organisent l’espace, à l’échelle locale et planétaire."
+  },
+  {
+   "terme": "Moishe Postone",
+   "type": "personne",
+   "formes": [
+    "Moishe Postone",
+    "Postone"
+   ],
+   "court": "Historien et théoricien critique américain (1942-2018), auteur de « Temps, travail et domination sociale ».",
+   "long": "Postone a proposé une relecture de Marx centrée sur la critique du travail abstrait et du temps qu’impose le capitalisme, plutôt que sur la seule lutte des classes."
   },
   {
    "terme": "Nicholas Georgescu-Roegen",
@@ -3396,7 +4728,8 @@
    "formes": [
     "Platon",
     "platonicien",
-    "platonicienne"
+    "platonicienne",
+    "platonisme"
    ],
    "court": "Philosophe grec (vers 428-348 av. J.-C.), disciple de Socrate, auteur de dialogues.",
    "long": "Dans ses dialogues (« La République », « Phèdre », « Ménon », « Protagoras »), Platon fait parler Socrate sur la justice, le savoir, l’amour. Dans le « Phèdre », il qualifie l’écriture de pharmakon. Stiegler revient souvent à ces textes."
@@ -3561,6 +4894,16 @@
    "long": "En 1996, Huntington annonçait que les conflits futurs opposeraient de grandes aires culturelles et religieuses. Sa thèse a été largement contestée."
   },
   {
+   "terme": "Scientifiques du climat",
+   "type": "personne",
+   "formes": [
+    "climatologues",
+    "climatologue"
+   ],
+   "court": "Spécialistes du climat et de son évolution.",
+   "long": "Les climatologues étudient le système climatique (atmosphère, océans, glaces) par l’observation et la modélisation. Leurs travaux sont synthétisés par le GIEC."
+  },
+  {
    "terme": "Sigmund Freud",
    "type": "personne",
    "formes": [
@@ -3586,7 +4929,8 @@
    "type": "personne",
    "formes": [
     "Socrate",
-    "socratique"
+    "socratique",
+    "socratiques"
    ],
    "court": "Philosophe athénien (vers 470-399 av. J.-C.), condamné à mort, maître de Platon.",
    "long": "Socrate n’a rien écrit : on le connaît par les dialogues de Platon. Il interrogeait ses concitoyens pour leur faire reconnaître leur ignorance. Accusé de corrompre la jeunesse, il fut condamné à boire la ciguë. Foucault voit en lui une figure de la parrêsia."
@@ -3703,6 +5047,16 @@
    "long": "Dans son « Essai sur l’exotisme », Segalen défend le « divers » contre l’uniformisation du monde, une pensée reprise par Glissant et par Stiegler."
   },
   {
+   "terme": "Vilém Flusser",
+   "type": "personne",
+   "formes": [
+    "Vilém Flusser",
+    "Flusser"
+   ],
+   "court": "Philosophe des médias tchéco-brésilien (1920-1991), penseur des images techniques et de l’écriture.",
+   "long": "Dans « Pour une philosophie de la photographie » (1983), Flusser analyse l’appareil photo comme un programme qui détermine ce que l’on peut faire ; il a annoncé la fin de la culture de l’écrit au profit des images techniques."
+  },
+  {
    "terme": "Vladimir Vernadsky",
    "type": "personne",
    "formes": [
@@ -3717,7 +5071,8 @@
    "type": "personne",
    "formes": [
     "Walter Benjamin",
-    "Benjamin"
+    "Benjamin",
+    "benjaminienne"
    ],
    "court": "Philosophe et critique allemand (1892-1940), penseur de l’histoire, de l’art et de la technique.",
    "long": "Auteur de « L’Œuvre d’art à l’époque de sa reproductibilité technique » (1935) et des « Thèses sur le concept d’histoire » (1940), Walter Benjamin s’est suicidé en fuyant le nazisme. Sa figure de l’ange de l’histoire, poussé vers l’avenir par la tempête du progrès, est célèbre."
@@ -4095,6 +5450,16 @@
    "long": "Pendant treize jours, du 16 au 28 octobre 1962, le monde a frôlé la guerre nucléaire. Kennedy imposa un blocus naval ; Khrouchtchev finit par retirer ses missiles en échange d’une promesse de non-invasion de Cuba et du retrait discret de missiles américains en Turquie. L’auteur raconte l’avoir vécue enfant."
   },
   {
+   "terme": "Enclosures",
+   "type": "evenement",
+   "formes": [
+    "enclosures",
+    "enclosure"
+   ],
+   "court": "Clôture des terres communales en Angleterre (XVIe-XIXe siècles), qui a chassé les paysans vers les villes.",
+   "long": "En privatisant les champs et pâturages autrefois partagés, les enclosures ont privé de nombreux paysans de leurs moyens de vivre. Marx y voit un moment de l’accumulation primitive ; on parle aujourd’hui de « nouvelles enclosures » pour la privatisation des savoirs et des données."
+  },
+  {
    "terme": "Extinction Rebellion",
    "type": "evenement",
    "formes": [
@@ -4373,6 +5738,16 @@
    ],
    "court": "Ensemble des pays d’Europe de l’Ouest et d’Amérique du Nord, héritiers de la culture gréco-romaine et chrétienne.",
    "long": "Le terme désigne autant une aire géographique qu’une civilisation, dont le modèle industriel s’est imposé au monde."
+  },
+  {
+   "terme": "Prytanée et bouleutérion",
+   "type": "lieu",
+   "formes": [
+    "prytanée",
+    "bouleutérion"
+   ],
+   "court": "Bâtiments de la cité grecque : le prytanée abritait le foyer commun, le bouleutérion le conseil des citoyens.",
+   "long": "Le bouleutérion accueillait la Boulè, le conseil qui préparait les décisions de l’assemblée athénienne ; le prytanée abritait le feu sacré de la cité et les magistrats en exercice."
   },
   {
    "terme": "Seine-Saint-Denis",
